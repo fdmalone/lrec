@@ -56,43 +56,50 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
 
     int bits, pos, nn, sig, i, num_bit_str, disp_start, disp_end, dep, disp, shift;
     uint16_t onsite_bits, nn_bits;
-    uint16_t new_bits, bit_str[100000];
-    cplxd new_coeff, tmp_coeff, coeff_array[1];
+    uint16_t new_bits;
+    cplxd new_coeff, tmp_coeff;
+    vector<uint16_t>:: iterator ins;
+    vector<uint16_t> bit_str_0, bit_str_i;
+    vector<cplxd> coeff_array, coeff_array_i;
 
-    bit_str[0] = initial_bit_str;
+    bit_str_0[0] = initial_bit_str;
     coeff_array[0] = initial_coeff;
     disp_start = 0;
     disp_end = 1;
     disp = 0;
     shift = 0;
     for (dep = 0; dep < 2; dep++) {
-    for (bits = disp_start; bits < disp_end; bits++) {
+    for (bits = 0; bits < bit_str_0.size(); bits++) {
         i = 0;
         //cout << bits <<"  " <<disp << endl;
         for (pos = 0; pos < n_bits; pos = pos + 2) {
-            onsite_bits = (bit_str[bits] >> pos) & on_site_mask;
+            onsite_bits = (bit_str_0[bits] >> pos) & on_site_mask;
             if (onsite_bits != 0) {
                 // Loop over neighbours.
-                tmp_coeff = coeff_array[1];
+                tmp_coeff = coeff_array[bits];
                 for (nn = 0; nn < 2; nn++) {
-                    nn_bits = ((bit_str[bits] >> boundary(pos, nn)) & on_site_mask);
+                    nn_bits = ((bit_str_0[bits] >> boundary(pos, nn)) & on_site_mask);
                     // Perform commutation of input sigma matrix with the two other types.
                     for (sig = 0; sig < 2; sig++) {
                         i = i + 1;
-                        cout << bits+shift+i << endl;
                         new_bits = comm_bits(onsite_bits, nn_bits, tmp_coeff, sig);
-                        //coeff_array[bits+shift+i] = tmp_coeff;
-                        bit_str[bits+shift+i] = merge_bits(new_bits, bit_str[bits], pos, nn);
-                        //tmp_coeff = coeff_array[bits];
+                        new_bits = merge_bits(new_bits, bit_str_0[bits], pos, nn);
+                        ins = lower_bound(bit_str_i.begin(), bit_str_i.end(), new_bits);
+                        if (bit_str_i[ins-bit_str_i.begin()] == new_bits) {
+                            coeff_array_i[ins-bit_str_i.begin()] = tmp_coeff;
+                        }
+                        else {
+                            bit_str_i.insert(ins, new_bits);
+                            coeff_array_i.insert(ins, tmp_coeff);
+                        }
+                        tmp_coeff = coeff_array[bits];
                     }
                 }
             }
         }
-        shift = shift + i - 1;
     }
-    disp_end = disp_end + shift + 1;
-    disp_start = disp_end - shift - 1;
-    disp = i-1;
+    bit_str_0 = bit_str_i;
+    fill(bit_str_i.begin(), bit_str_i.end(), 0);
     }
     cout << disp_end << endl;
     //for (i = 0; i < disp_end; i++) {
