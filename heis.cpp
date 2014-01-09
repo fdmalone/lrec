@@ -10,29 +10,29 @@ using namespace std;
 typedef complex<double> cplxd;
 
 // Bit Manipulation.
-int count_bits(uint16_t inp);
-uint16_t rotl(uint16_t x, int n);
-uint16_t rotr(uint16_t x, int n);
+int count_bits(uint32_t inp);
+uint32_t rotl(uint32_t x, int n);
+uint32_t rotr(uint32_t x, int n);
 // Bit twiddling hacks
-uint16_t swap_bits(uint16_t x);
-void find_set_bits(uint16_t spins, vector<int>& positions);
+uint32_t swap_bits(uint32_t x);
+void find_set_bits(uint32_t spins, vector<int>& positions);
 
 // Sorting;
 int permute(int a, int b, double &sign);
 int insertion_sort(int array[], int lenght);
-int insertion_rank(uint16_t array[], uint16_t rank[], int length);
-int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos);
-void insert_element(vector<uint16_t> &a, int pos, int res, int max, uint16_t val);
+int insertion_rank(uint32_t array[], uint32_t rank[], int length);
+int binary_search(vector<uint32_t> &a, int min, int max, uint32_t val, int &pos);
+void insert_element(vector<uint32_t> &a, int pos, int res, int max, uint32_t val);
 void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val);
 
 
 // Commutation/recursion.
-uint16_t merge_bits(uint16_t mod_bits, uint16_t input_bit_str, int pos, int nn);
-int mask_out_left(uint16_t inp_bit_str, int pos);
-uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coeff, int iter);
-void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff);
+uint32_t merge_bits(uint32_t mod_bits, uint32_t input_bit_str, int pos, int nn);
+int mask_out_left(uint32_t inp_bit_str, int pos);
+uint32_t comm_bits(uint32_t onsite_bit_str, uint32_t nn_bit_str, cplxd &curr_coeff, int iter);
+void commute_wrapper(uint32_t initial_bit_str, cplxd initial_coeff);
 int boundary(int pos, int nn);
-void add_new_bit_str(uint16_t bits[], cplxd coeffs[], uint16_t rank[], int length, vector<uint16_t> &bit_str_mod, vector<cplxd> &coeff_mod, int &max);
+void add_new_bit_str(uint32_t bits[], cplxd coeffs[], uint32_t rank[], int length, vector<uint32_t> &bit_str_mod, vector<cplxd> &coeff_mod, int &max);
 
 enum nearest {
     Left,
@@ -40,11 +40,11 @@ enum nearest {
 };
 
 // Bit masks.
-uint16_t bit_mask = 0XF, on_site_mask = 3, nn_mask = 0XC;
-uint16_t bit_cycle[2] = {1, 2};
+uint32_t bit_mask = 0XF, on_site_mask = 3, nn_mask = 0XC;
+uint32_t bit_cycle[2] = {1, 2};
 
 // System Globals;
-int n_bits = 16;
+int n_bits = 32;
 int n_sites = n_bits/2;
 int n_neigh[2] = {Left, Right};
 
@@ -63,42 +63,51 @@ int boundary(int pos, int nn) {
     }
 }
 
-void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
+void commute_wrapper(uint32_t initial_bit_str, cplxd initial_coeff) {
 
     int bits, pos, nn, sig, i, num_bit_str, disp_start, disp_end, dep, disp, shift, max;
-    uint16_t rank[4];
-    uint16_t onsite_bits, nn_bits;
-    uint16_t new_bits, bits_sig[4];
+    uint32_t rank[4];
+    uint32_t onsite_bits, nn_bits;
+    uint32_t new_bits, bits_sig[4];
     cplxd new_coeff, tmp_coeff, coeff_sig[4];
-    vector<uint16_t> bit_str_0, bit_str_i;
-    vector<cplxd> coeff_array, coeff_array_i;
+    vector<uint32_t> bit_str_0, bit_str_i;
+    vector<cplxd> coeff_array_0, coeff_array_i;
 
     bit_str_0.push_back(initial_bit_str);
-    coeff_array.push_back(initial_coeff);
+    coeff_array_0.push_back(initial_coeff);
     i = 0;
 
-    for (dep = 0; dep < 6; dep++) {
+    for (dep = 0; dep < 9; dep++) {
         max = -1;
+        // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
+        // Hopefully should reduce on reallocation of array, although probably too large at the same time.
+        //bit_str_i.reserve((dep+1)*4*bit_str_0.size());
+        //coeff_array_i.reserve((dep+1)*4*bit_str_0.size());
+        //cout << bit_str_0.size() << "  " <<bit_str_i.capacity() <<endl;
         for (bits = 0; bits < bit_str_0.size(); bits++) {
             // cout << bits <<"  " <<bit_str_0[bits] << endl;
             for (pos = 0; pos < n_bits; pos = pos + 2) {
                 onsite_bits = (bit_str_0[bits] >> pos) & on_site_mask;
                 // [H, I] = 0.
                 if (onsite_bits != 0) {
+                    i = 0;
                     // Loop over neighbours.
-                    tmp_coeff = coeff_array[bits];
+                    tmp_coeff = coeff_array_0[bits];
                     for (nn = 0; nn < 2; nn++) {
                         nn_bits = ((bit_str_0[bits] >> boundary(pos, nn)) & on_site_mask);
                         //cout << bitset<16>(onsite_bits) <<"  " <<bitset<16>(nn_bits)<< endl;
                         // Perform commutation of input sigma matrix with the two other types.
                         for (sig = 0; sig < 2; sig++) {
-                            i = i + 1;
                             // Find result of [H,sigma].
                             new_bits = comm_bits(onsite_bits, nn_bits, tmp_coeff, sig);
                             new_bits = merge_bits(new_bits, bit_str_0[bits], pos, nn);
-                            bits_sig[sig+nn] = new_bits;
-                            coeff_sig[sig+nn] = tmp_coeff;
-                            tmp_coeff = coeff_array[bits];
+                            //if ( new_bits == 0X8000000B|| new_bits == (int)(pow(2.0,30)+pow(2.0,2)+pow(2.0, 1)+pow(2.0,0))) {
+                                //cout << bitset<32>(bit_str_0[bits]) << "  " << pos <<"  "<< bitset<32>(new_bits) <<"  " <<bitset<32>(0X8000000B) << endl;
+                            //}
+                            bits_sig[i] = new_bits;
+                            coeff_sig[i] = tmp_coeff;
+                            tmp_coeff = coeff_array_0[bits];
+                            i = i + 1;
                         }
                     }
                     // Rank new bits.
@@ -110,10 +119,17 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
             //cout << i << endl;
             }
         }
-        //cout << bit_str_0.size() << "  " << bit_str_i.size() << endl;
+        cout << bit_str_0.size() << "  " << bit_str_i.size() <<"  "<<bit_str_i.capacity() << endl;
         bit_str_0 = bit_str_i;
-        //bit_str_i.resize(0);
+        //cout << bit_str_0.size() << "  " << bit_str_i.size() << bit_str_i[0] << "  " <<bit_str_0[0]<< endl;
+        coeff_array_0 = coeff_array_i;
+        bit_str_i.resize(0);
+        coeff_array_i.resize(0);
         //cout << i << endl;
+        //for (int j = 0; j < bit_str_0.size(); j++) {
+        //    cout << j << "  " << bitset<16>(bit_str_0[j]) << "   " << bit_str_0[j] << endl;
+        //}
+        //cout << endl;
     }
     //cout << disp_end << endl;
     //for (i = 0; i < disp_end; i++) {
@@ -122,37 +138,48 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
 
 }
 
-void add_new_bit_str(uint16_t bits[], cplxd coeffs[], uint16_t rank[], int length, vector<uint16_t> &bit_str_mod, vector<cplxd> &coeff_mod, int &max) {
+void add_new_bit_str(uint32_t bits[], cplxd coeffs[], uint32_t rank[], int length, vector<uint32_t> &bit_str_mod, vector<cplxd> &coeff_mod, int &max) {
 
     // If bit string is already present in list add coefficients else need to insert new bit string in appropriate position in list.
     int i;
     int res, pos;
-
-    for (i = 0 ; i < length; i++) {
+    //cout << bit_str_mod.size() << endl;
+    for (i = 0; i < length; i++) {
         // There is probably a way around this.
         if (max < 1) {
             bit_str_mod.push_back(bits[rank[i]]);
+            coeff_mod.push_back(coeffs[rank[i]]);
         }
         else {
-            res = binary_search(bit_str_mod, 0, max, bits[rank[i]], pos);
+            //cout << bit_str_mod.size() << endl;
+            res = binary_search(bit_str_mod, 0, bit_str_mod.size()-1, bits[rank[i]], pos);
+            //cout << pos << "    "<< res <<"   "<<bits[rank[i]] << "     " << bit_str_mod[pos] << endl;
             if (res == 1) {
                 coeff_mod[pos] += coeffs[rank[i]];
             }
             else {
-                insert_element(bit_str_mod, pos, res, max, bits[rank[i]]);
-                insert_element_cplxd(coeff_mod, pos, res, max, coeffs[rank[i]]);
-                max = max + 1;
+                bit_str_mod.insert(bit_str_mod.begin() + pos, bits[rank[i]]);
+                coeff_mod.insert(coeff_mod.begin() + pos, coeffs[rank[i]]);
+                //insert_element(bit_str_mod, pos, res, max, bits[rank[i]]);
+                //insert_element_cplxd(coeff_mod, pos, res, max, coeffs[rank[i]]);
+                //max = max + 1;
             }
         }
+        //for (int j = 0; j < bit_str_mod.size(); j++) {
+        //    cout << j << "   " <<bit_str_mod[j] << endl;
+        //}
+        //cout << endl;
+        max = max + 1;
+        //cout <<"this: " << bits[rank[i]] << "  " <<bit_str_mod[i] <<"  "<< bit_str_mod.size()<< endl;
     }
 }
 
-int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos) {
+int binary_search(vector<uint32_t> &a, int min, int max, uint32_t val, int &pos) {
 
     int mid, lo, hi, safe = 0;
 
     if (val > a[max]) {
-
+        // C indexing.
         pos = max + 1;
         return 0;
 
@@ -165,6 +192,7 @@ int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos)
         do {
             pos = lo + ((hi-lo)/2);
             if (a[pos] == val) {
+                return 1;
                 break;
             }
             else if (a[pos] < val) {
@@ -192,16 +220,11 @@ int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos)
     }
 }
 
-void insert_element(vector<uint16_t> &a, int pos, int res, int max, uint16_t val) {
+void insert_element(vector<uint32_t> &a, int pos, int res, int max, uint32_t val) {
 
     int i, k;
 
-    for (i = max; i >= pos; i--) {
-        k = i + 1;
-        a[k] = a[i];
-    }
-    a[pos] = val;
-
+    a.insert(a.begin() + pos, val);
 }
 
 void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val) {
@@ -216,7 +239,7 @@ void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val
 
 }
 
-int insertion_rank(uint16_t array[], uint16_t rank[], int length) {
+int insertion_rank(uint32_t array[], uint32_t rank[], int length) {
 
     int i, j, tmp;
 
@@ -227,7 +250,7 @@ int insertion_rank(uint16_t array[], uint16_t rank[], int length) {
         j = i - 1;
         tmp = rank[i];
         do {
-            if (array[rank[j]] - array[tmp] < 0) break;
+            if ((int)(array[rank[j]] - array[tmp]) < 0) break;
             rank[j+1] = rank[j];
             j--;
         } while (j >= 0);
@@ -235,7 +258,7 @@ int insertion_rank(uint16_t array[], uint16_t rank[], int length) {
     }
 }
 
-uint16_t merge_bits(uint16_t mod_bits, uint16_t inp_bit_str, int pos, int nn) {
+uint32_t merge_bits(uint32_t mod_bits, uint32_t inp_bit_str, int pos, int nn) {
 
     if (nn == Left) {
         mod_bits = rotl(mod_bits, pos);
@@ -250,29 +273,29 @@ uint16_t merge_bits(uint16_t mod_bits, uint16_t inp_bit_str, int pos, int nn) {
 
 }
 
-uint16_t swap_bits(uint16_t b) {
+uint32_t swap_bits(uint32_t b) {
     unsigned int i = 0, j = 2; // positions of bit sequences to swap
     unsigned int n = 2;    // number of consecutive bits in each sequence
-    uint16_t r;    // bit-swapped result goes here
+    uint32_t r;    // bit-swapped result goes here
 
-    uint16_t x = ((b >> i) ^ (b >> j)) & ((1U << n) - 1); // XOR temporary
+    uint32_t x = ((b >> i) ^ (b >> j)) & ((1U << n) - 1); // XOR temporary
     r = b ^ ((x << i) | (x << j));
     return(r);
 }
 
-uint16_t rotl(uint16_t x, int n) {
+uint32_t rotl(uint32_t x, int n) {
           return ((x << n) | (x >> (n_bits - n)));
 }
 
-uint16_t rotr(uint16_t x, int n) {
+uint32_t rotr(uint32_t x, int n) {
           return ((x >> n) | (x << (n_bits - n)));
 }
 
-uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coeff, int iter) {
+uint32_t comm_bits(uint32_t onsite_bit_str, uint32_t nn_bit_str, cplxd &curr_coeff, int iter) {
 
     int i;
     double sgn;
-    uint16_t sigma_nn = 0, onsite_tmp, tmp_nn;
+    uint32_t sigma_nn = 0, onsite_tmp, tmp_nn;
     cplxd I(0.0,1.0), onsite_coeff;
 
     // Perform commutation.
@@ -314,7 +337,7 @@ uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coe
     return(onsite_tmp);
 }
 
-void merge_bits(uint16_t input_bit_str, unsigned long int new_bits[], int pos) {
+void merge_bits(uint32_t input_bit_str, unsigned long int new_bits[], int pos) {
 
     int i;
     for (i = 0; i < 2; i++) {
@@ -362,7 +385,7 @@ int insertion_sort(int array[], int length) {
     return(counter);
 }
 
-void find_set_bits(uint16_t spins, vector<int>& positions) {
+void find_set_bits(uint32_t spins, vector<int>& positions) {
 
     int i;
 
