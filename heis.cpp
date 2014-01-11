@@ -101,9 +101,6 @@ void commute_wrapper(uint32_t initial_bit_str, cplxd initial_coeff) {
                             // Find result of [H,sigma].
                             new_bits = comm_bits(onsite_bits, nn_bits, tmp_coeff, sig);
                             new_bits = merge_bits(new_bits, bit_str_0[bits], pos, nn);
-                            //if ( new_bits == 0X8000000B|| new_bits == (int)(pow(2.0,30)+pow(2.0,2)+pow(2.0, 1)+pow(2.0,0))) {
-                                //cout << bitset<32>(bit_str_0[bits]) << "  " << pos <<"  "<< bitset<32>(new_bits) <<"  " <<bitset<32>(0X8000000B) << endl;
-                            //}
                             bits_sig[i] = new_bits;
                             coeff_sig[i] = tmp_coeff;
                             tmp_coeff = coeff_array_0[bits];
@@ -326,7 +323,7 @@ uint32_t comm_bits(uint32_t onsite_bit_str, uint32_t nn_bit_str, cplxd &curr_coe
     else {
         tmp_nn = permute(nn_bit_str, sigma_nn, sgn);
         //cout << "onsite_tmp: diff " << bitset<16> (tmp_nn)<< endl;
-        curr_coeff *= I*sgn;
+        curr_coeff *= I*sgn*pow(-1.0,iter);
     }
     // Shift back to correct place.
     tmp_nn <<= 2;
