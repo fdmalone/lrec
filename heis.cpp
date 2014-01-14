@@ -89,7 +89,7 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
     cout << lanc_b[0] << endl;
 
-    for (dep = 0; dep < 2; dep++) {
+    for (dep = 0; dep < 8; dep++) {
         max = -1;
         // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
         // Hopefully should reduce on reallocation of array, although probably too large at the same time.
@@ -143,8 +143,8 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         print_c(coeff_array_i);
         cout << endl;
         */
-        print(bit_str_i);
-        print_c(coeff_array_i);
+        //print(bit_str_i);
+        //print_c(coeff_array_i);
         /*
         // a_i = Tr(Lu, u)
         lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
@@ -162,8 +162,8 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         */
         merge_lists(bit_str_i, bit_str_old, coeff_array_i, coeff_array_old, delta);
         lanc_b[dep+1] = inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i);
-        print(bit_str_i);
-        print_c(coeff_array_i);
+        //print(bit_str_i);
+        //print_c(coeff_array_i);
 
         cout << dep << "    " << delta <<"   "<<lanc_b[dep]<<"  "<<lanc_b[dep+1] << endl;
         bit_str_old = bit_str_0;
@@ -200,16 +200,24 @@ double inf_trace(vector<uint16_t> bit_str_a, vector<uint16_t> bit_str_b, vector<
 
     int i, j;
     cplxd trace;
+    double counter = 0;
 
     for (i = 0; i < bit_str_a.size(); i++) {
         //cout << coeff_b[i] << endl;
         for (j =0 ; j < bit_str_b.size(); j++) {
             if (bit_str_a[i] == bit_str_b[j]) {
-                trace += conj(coeff_a[i])*coeff_b[j];
+                for (int k = 0; k < n_bits; k = k + 2) {
+                    //cout << ((bit_str_a[i] >> k)&3) <<"   "<< counter <<endl; 
+                    if (((bit_str_a[i] >> k)&3) != 0) {
+                        counter++;
+                    }
+                }
+                trace += pow(0.25,counter)*conj(coeff_a[i])*coeff_b[j];
+                counter = 0;
             }
         }
     }
-    return(0.25*trace.real());
+    return(trace.real());
 }
 
 void merge_lists(vector<uint16_t> &bit_str_new, vector<uint16_t> bit_str_old, vector<cplxd> &coeff_new, vector<cplxd> coeff_old, double mult_a) {
