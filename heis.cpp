@@ -4,42 +4,48 @@
 #include <vector>
 #include <complex>
 #include <stdint.h>
+#include <fstream>
 
 using namespace std;
 
 typedef complex<double> cplxd;
 
 // Bit Manipulation.
-int count_bits(uint16_t inp);
-uint16_t rotl(uint16_t x, int n);
-uint16_t rotr(uint16_t x, int n);
+int count_bits(uint32_t inp);
+uint32_t rotl(uint32_t x, int n);
+uint32_t rotr(uint32_t x, int n);
 // Bit twiddling hacks
-uint16_t swap_bits(uint16_t x);
-void find_set_bits(uint16_t spins, vector<int>& positions);
+uint32_t swap_bits(uint32_t x);
+void find_set_bits(uint32_t spins, vector<int>& positions);
 
 // Sorting;
 int permute(int a, int b, double &sign);
 int permute_norm(int a, int b, double &sign);
 int insertion_sort(int array[], int lenght);
-int insertion_rank(uint16_t array[], uint16_t rank[], int length);
-int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos);
-void insert_element(vector<uint16_t> &a, int pos, int res, int max, uint16_t val);
+int insertion_rank(uint32_t array[], uint32_t rank[], int length);
+int binary_search(vector<uint32_t> &a, int min, int max, uint32_t val, int &pos);
+void insert_element(vector<uint32_t> &a, int pos, int res, int max, uint32_t val);
 void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val);
-double inf_trace(vector<uint16_t> bit_str_a, vector<uint16_t> bit_str_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b);
-void merge_lists(vector<uint16_t> &bit_str_new, vector<uint16_t> bit_str_old, vector<cplxd> &coeff_new, vector<cplxd> coeff_old, double mult_a);
+double inf_trace(vector<uint32_t> bit_str_a, vector<uint32_t> bit_str_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b);
+void merge_lists(vector<uint32_t> &bit_str_new, vector<uint32_t> bit_str_old, vector<cplxd> &coeff_new, vector<cplxd> coeff_old, double mult_a);
 void divide(vector<cplxd> &input, double divisor);
+int look_up_table(uint32_t input, uint32_t arr[]);
 
 
 
 // Commutation/recursion.
-uint16_t merge_bits(uint16_t mod_bits, uint16_t input_bit_str, int pos, int nn);
-int mask_out_left(uint16_t inp_bit_str, int pos);
-uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coeff, int iter, int pos, int nn);
-void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff);
+uint32_t merge_bits(uint32_t mod_bits, uint32_t input_bit_str, int pos, int nn);
+int mask_out_left(uint32_t inp_bit_str, int pos);
+uint32_t comm_bits(uint32_t onsite_bit_str, uint32_t nn_bit_str, cplxd &curr_coeff, int iter, int pos, int nn);
+void commute_wrapper(uint32_t initial_bit_str, cplxd initial_coeff);
 int boundary(int pos, int nn);
-void add_new_bit_str(uint16_t bits[], cplxd coeffs[], uint16_t rank[], int length, vector<uint16_t> &bit_str_mod, vector<cplxd> &coeff_mod, int &max);
-void print(vector<uint16_t> input);
+void add_new_bit_str(uint32_t bits[], cplxd coeffs[], uint32_t rank[], int length, vector<uint32_t> &bit_str_mod, vector<cplxd> &coeff_mod, int &max);
+void print(vector<uint32_t> input);
 void print_c(vector<cplxd> input);
+
+// Recursion.
+double continued_fraction(double a[], double b[], double num, double omega);
+double gs_trace(vector<uint32_t> input_a, vector<uint32_t> input_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b, uint32_t ground_state[], double gs_coeff[], int iter);
 
 enum nearest {
     Left,
@@ -47,18 +53,41 @@ enum nearest {
 };
 
 // Bit masks.
-uint16_t bit_mask = 0XF, on_site_mask = 3, nn_mask = 0XC;
-uint16_t bit_cycle[2] = {1, 2};
+uint32_t bit_mask = 0XF, on_site_mask = 3, nn_mask = 0XC;
+uint32_t bit_cycle[2] = {1, 2};
 
 // System Globals;
-int n_bits = 16;
+int n_bits = 32;
 int n_sites = n_bits/2;
 int n_neigh[2] = {Left, Right};
 double J[3] = {1.0, 1.0, 0.0};
+cplxd I_c(0.0,1.0);
+
+// fin_trace constants
+
+// xor_array:
+// arranged: {I, sx, sy, sz}
+// sx and sy flip bits.
+uint32_t xor_array[4] = {0,1,1,0};
+// spin_coeff:
+// arranged as above for rows, columns = {up, down}.
+// These are the coefficintes which result from acting on up or
+// down with one of the four matrices.
+cplxd spin_coeff[4][2] = {{1.0,1.0},{1.0,1.0},{I_c,I_c},{1.0,-1.0}};
 
 int main(){
 
-    commute_wrapper(1, 1.0);
+    //commute_wrapper(1, 1.0);
+    vector<uint32_t> a, b;
+    vector<cplxd> c_a, c_b;
+    c_a.push_back(1.0);
+    c_b.push_back(2.0);
+    a.push_back(1);
+    b.push_back(3);
+    uint32_t gs[4] = {0, 1, 2, 3};
+    double gs_c[4] = {0.5, 0.5, 0.5, 0.5};
+    cout << gs_trace(a, b, c_a, c_b, gs, gs_c, 0) << endl;
+
 
 }
 
@@ -71,15 +100,64 @@ int boundary(int pos, int nn) {
     }
 }
 
-void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
+double gs_trace(vector<uint32_t> input_a, vector<uint32_t> input_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b, uint32_t ground_state[], double gs_coeff[], int iter) {
+
+    int i, j, k;
+    int tmp_el, bit;
+    uint32_t onsite_sigma_a, onsite_sigma_b, onsite_sigma, basis_element;
+    cplxd trace = 0;
+    double sgn;
+    cplxd reduced_coeff, basis_coeff;
+
+
+    // Loop over Pauli matrices in product state.
+    for (i = 0; i < input_a.size(); i++) {
+        for (j = 0; j < input_b.size(); j++) {
+            basis_element = ground_state[iter];
+            basis_coeff = gs_coeff[iter];
+            //reduced_coeff = reduce_product(input_a[i], input_b[j], coeff_a[i], coeff_b[j], reduced_bits);
+            //cout << bitset<16>(input_a[i]) << "   " << bitset<16>(input_b[j]) << endl;
+            for (k = 0; k < 4; k++) {
+                // Find if spin up or down at site k.
+                bit = (basis_element >> k)&1;
+                //cout << bit << endl;
+                // Operate on basis element on site k with Pauli matrix.
+                onsite_sigma_a = (input_a[i] >> 2*k)&on_site_mask;
+                onsite_sigma_b = (input_b[j] >> 2*k)&on_site_mask;
+                onsite_sigma = permute_norm(onsite_sigma_b, onsite_sigma_a, sgn);
+                //cout << bitset<16>(onsite_sigma_a) <<"   "<< bitset<16>(onsite_sigma_b) << "   " << bitset<16>(onsite_sigma) <<"   " <<basis_element << endl;
+                basis_element ^= xor_array[onsite_sigma];
+                //cout << bitset<16>(basis_element) <<"   " << coeff_b[j] <<"   "<< reduced_coeff<< "   "<< xor_array[onsite_sigma] << basis_element <<endl;
+                // Work out coefficient = a_i*
+                basis_coeff *= sgn*spin_coeff[onsite_sigma][bit];
+            }
+            // cout << basis_coeff <<"   "<< conj(coeff_b[j])*coeff_a[i] << "   " << gs_coeff[look_up_table(basis_element, ground_state)]  <<endl;
+            trace += conj(coeff_b[j])*coeff_a[i]*basis_coeff*gs_coeff[look_up_table(basis_element, ground_state)];
+        }
+    }
+    cout << trace.real() << "  "  << trace.imag() << endl;
+    return((double)trace.real());
+}
+
+int look_up_table(uint32_t input, uint32_t arr[]) {
+
+    for (int i = 0; i < 4; i++) {
+        if (arr[i] == input) {
+            return(i);
+        }
+    }
+
+}
+
+void commute_wrapper(uint32_t initial_bit_str, cplxd initial_coeff) {
 
     int bits, pos, nn, sig, i, num_bit_str, disp_start, disp_end, dep, disp, shift, max;
-    uint16_t rank[4];
-    uint16_t onsite_bits, nn_bits;
-    uint16_t new_bits, bits_sig[4];
-    double lanc_a[10], lanc_b[10], J = 1.0, delta;
+    uint32_t rank[4];
+    uint32_t onsite_bits, nn_bits;
+    uint32_t new_bits, bits_sig[4];
+    double lanc_a[14], lanc_b[14], J = 1.0, delta;
     cplxd new_coeff, tmp_coeff, coeff_sig[4];
-    vector<uint16_t> bit_str_0, bit_str_i, bit_str_old;
+    vector<uint32_t> bit_str_0, bit_str_i, bit_str_old;
     vector<cplxd> coeff_array_0, coeff_array_i, coeff_array_old;
 
     bit_str_0.push_back(initial_bit_str);
@@ -89,12 +167,12 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
     cout << lanc_b[0] << endl;
 
-    for (dep = 0; dep < 8; dep++) {
+    for (dep = 0; dep < 4; dep++) {
         max = -1;
         // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
         // Hopefully should reduce on reallocation of array, although probably too large at the same time.
-        //bit_str_i.reserve((dep+1)*4*bit_str_0.size());
-        //coeff_array_i.reserve((dep+1)*4*bit_str_0.size());
+        bit_str_i.reserve((dep+1)*4*bit_str_0.size());
+        coeff_array_i.reserve((dep+1)*4*bit_str_0.size());
         //cout << bit_str_0.size() << "  " <<bit_str_i.capacity() <<endl;
         for (bits = 0; bits < bit_str_0.size(); bits++) {
             for (pos = 0; pos < n_bits; pos = pos + 2) {
@@ -129,23 +207,6 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
                 }
             }
         }
-        /*
-        print(bit_str_old);
-        cout << endl;
-        print(bit_str_0);
-        cout <<endl;
-        print(bit_str_i);
-        cout << endl;
-        print_c(coeff_array_old);
-        cout << endl;
-        print_c(coeff_array_0);
-        cout << endl;
-        print_c(coeff_array_i);
-        cout << endl;
-        */
-        //print(bit_str_i);
-        //print_c(coeff_array_i);
-        /*
         // a_i = Tr(Lu, u)
         lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
         // Calculate Lu - a_i u.
@@ -154,21 +215,13 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         merge_lists(bit_str_i, bit_str_old, coeff_array_i, coeff_array_old, -1.0*lanc_b[dep]);
         // b_{i+1} = Tr(V_{i+1}, V_{i+1})
         lanc_b[dep+1] = sqrt(inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i));
-        cout << lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep+1]<< endl;
-        //cout <<dep<<"   " << lanc_a[dep]<<"   " <<lanc_b[dep+1] << " "<< lanc_b[dep+1]/lanc_b[dep] << endl;
+        //cout << lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
+        cout <<dep<<"   " << lanc_a[dep]<<"   " <<lanc_b[dep+1] << endl;
         //recursion(bit_str_old, bit_str_0, bit_str_i, coeff_array_old, coeff_array_0, coeff_array_i);
         //cout <<bit_str_old.size()<<"  " << bit_str_0.size() << "  " << bit_str_i.size() <<"  "<<bit_str_i.capacity() << endl;
         divide(coeff_array_i, lanc_b[dep+1]);
-        */
-        merge_lists(bit_str_i, bit_str_old, coeff_array_i, coeff_array_old, delta);
-        lanc_b[dep+1] = inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i);
-        //print(bit_str_i);
-        //print_c(coeff_array_i);
-
-        cout << dep << "    " << delta <<"   "<<lanc_b[dep]<<"  "<<lanc_b[dep+1] << endl;
         bit_str_old = bit_str_0;
         bit_str_0 = bit_str_i;
-        delta = lanc_b[dep+1]/lanc_b[dep];
         //cout << bit_str_0.size() << "  " << bit_str_i.size() << bit_str_i[0] << "  " <<bit_str_0[0]<< endl;
         coeff_array_old = coeff_array_0;
         coeff_array_0 = coeff_array_i;
@@ -176,8 +229,58 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         coeff_array_i.resize(0);
     }
 
+    ofstream myfile;
+    myfile.open("spect.dat");
+    double omega = -5.0, res;
+    for (i = 0; i < 1000; i++) {
+        omega = omega + 0.01;
+        res = continued_fraction(lanc_a, lanc_b, dep, omega);
+        myfile << omega << "   " << res << endl;
+    }
+    myfile.close();
+
 }
-void print(vector<uint16_t> input) {
+
+
+double continued_fraction(double a[], double b[], double num, double omega) {
+
+    int i;
+    double eps;
+    cplxd eta, f0, c0, d0, delta, tiny_num;
+
+    eta = (0.0, 0.001);
+    tiny_num = 1e-30;
+    eps = 1e-15;
+    f0 = tiny_num;
+    c0 = f0;
+    d0 = 0;
+
+    for (i = 0; i < num; i++) {
+
+        cout << a[i] << "   " << b[i] << endl;
+        d0 = omega - eta - a[i] - b[i]*b[i]*d0;
+
+        if (abs(d0) < eps) {
+            d0 = tiny_num;
+        }
+
+        c0 = omega - eta - a[i] - b[i]*b[i]/c0;
+
+        if (abs(c0) < eps) {
+            c0 = tiny_num;
+        }
+
+        d0 = 1.0/d0;
+        delta = c0*d0;
+        f0 = f0*delta;
+
+    }
+
+    return(-1.0/3.1415*f0.imag());
+
+}
+
+void print(vector<uint32_t> input) {
     for (int i = 0; i < input.size(); i++) {
         cout << i << "  " << bitset<16>(input[i]) << endl;
     }
@@ -196,31 +299,23 @@ void divide(vector<cplxd> &input, double divisor) {
     }
 }
 
-double inf_trace(vector<uint16_t> bit_str_a, vector<uint16_t> bit_str_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b) {
+double inf_trace(vector<uint32_t> bit_str_a, vector<uint32_t> bit_str_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b) {
 
     int i, j;
     cplxd trace;
-    double counter = 0;
 
     for (i = 0; i < bit_str_a.size(); i++) {
         //cout << coeff_b[i] << endl;
         for (j =0 ; j < bit_str_b.size(); j++) {
             if (bit_str_a[i] == bit_str_b[j]) {
-                for (int k = 0; k < n_bits; k = k + 2) {
-                    //cout << ((bit_str_a[i] >> k)&3) <<"   "<< counter <<endl; 
-                    if (((bit_str_a[i] >> k)&3) != 0) {
-                        counter++;
-                    }
-                }
-                trace += pow(0.25,counter)*conj(coeff_a[i])*coeff_b[j];
-                counter = 0;
+                trace += conj(coeff_a[i])*coeff_b[j];
             }
         }
     }
     return(trace.real());
 }
 
-void merge_lists(vector<uint16_t> &bit_str_new, vector<uint16_t> bit_str_old, vector<cplxd> &coeff_new, vector<cplxd> coeff_old, double mult_a) {
+void merge_lists(vector<uint32_t> &bit_str_new, vector<uint32_t> bit_str_old, vector<cplxd> &coeff_new, vector<cplxd> coeff_old, double mult_a) {
 
     int new_min, res, pos;
 
@@ -240,7 +335,7 @@ void merge_lists(vector<uint16_t> &bit_str_new, vector<uint16_t> bit_str_old, ve
     }
 }
 
-void add_new_bit_str(uint16_t bits[], cplxd coeffs[], uint16_t rank[], int length, vector<uint16_t> &bit_str_mod, vector<cplxd> &coeff_mod, int &max) {
+void add_new_bit_str(uint32_t bits[], cplxd coeffs[], uint32_t rank[], int length, vector<uint32_t> &bit_str_mod, vector<cplxd> &coeff_mod, int &max) {
 
     // If bit string is already present in list add coefficients else need to insert new bit string in appropriate position in list.
     int i;
@@ -276,7 +371,7 @@ void add_new_bit_str(uint16_t bits[], cplxd coeffs[], uint16_t rank[], int lengt
     }
 }
 
-int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos) {
+int binary_search(vector<uint32_t> &a, int min, int max, uint32_t val, int &pos) {
 
     int mid, lo, hi, safe = 0;
 
@@ -322,7 +417,7 @@ int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos)
     }
 }
 
-void insert_element(vector<uint16_t> &a, int pos, int res, int max, uint16_t val) {
+void insert_element(vector<uint32_t> &a, int pos, int res, int max, uint32_t val) {
 
     int i, k;
 
@@ -341,7 +436,7 @@ void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val
 
 }
 
-int insertion_rank(uint16_t array[], uint16_t rank[], int length) {
+int insertion_rank(uint32_t array[], uint32_t rank[], int length) {
 
     int i, j, tmp;
 
@@ -360,7 +455,7 @@ int insertion_rank(uint16_t array[], uint16_t rank[], int length) {
     }
 }
 
-uint16_t merge_bits(uint16_t mod_bits, uint16_t inp_bit_str, int pos, int nn) {
+uint32_t merge_bits(uint32_t mod_bits, uint32_t inp_bit_str, int pos, int nn) {
 
     if (nn == Left) {
         mod_bits = rotl(mod_bits, pos);
@@ -375,29 +470,29 @@ uint16_t merge_bits(uint16_t mod_bits, uint16_t inp_bit_str, int pos, int nn) {
 
 }
 
-uint16_t swap_bits(uint16_t b) {
+uint32_t swap_bits(uint32_t b) {
     unsigned int i = 0, j = 2; // positions of bit sequences to swap
     unsigned int n = 2;    // number of consecutive bits in each sequence
-    uint16_t r;    // bit-swapped result goes here
+    uint32_t r;    // bit-swapped result goes here
 
-    uint16_t x = ((b >> i) ^ (b >> j)) & ((1U << n) - 1); // XOR temporary
+    uint32_t x = ((b >> i) ^ (b >> j)) & ((1U << n) - 1); // XOR temporary
     r = b ^ ((x << i) | (x << j));
     return(r);
 }
 
-uint16_t rotl(uint16_t x, int n) {
+uint32_t rotl(uint32_t x, int n) {
           return ((x << n) | (x >> (n_bits - n)));
 }
 
-uint16_t rotr(uint16_t x, int n) {
+uint32_t rotr(uint32_t x, int n) {
           return ((x >> n) | (x << (n_bits - n)));
 }
 
-uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coeff, int iter, int pos, int nn) {
+uint32_t comm_bits(uint32_t onsite_bit_str, uint32_t nn_bit_str, cplxd &curr_coeff, int iter, int pos, int nn) {
 
     int i;
     double sgn;
-    uint16_t sigma_nn = 0, onsite_tmp, tmp_nn;
+    uint32_t sigma_nn = 0, onsite_tmp, tmp_nn;
     cplxd I(0.0,1.0), onsite_coeff;
 
     // Perform commutation.
@@ -408,7 +503,7 @@ uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coe
     // = J_nn/4 * 2 * I * epsilon_{nn,onsite,res}
     sigma_nn = permute(onsite_bit_str, onsite_tmp, sgn);
     //cout << sigma_nn <<"   "<<bitset<32>(onsite_bit_str)<<"   "<< J[sigma_nn] << endl;
-    curr_coeff *= 2.0*I*I*sgn*J[sigma_nn-1];
+    curr_coeff *= 0.25*2*I*sgn*J[sigma_nn-1];
     //cout << "onsite_tmp: comm_res " << bitset<16> (sigma_nn)<< endl;
     // Deal with nearest neighbour pauli matrix reduction.
     // Three possibilites:
@@ -423,16 +518,16 @@ uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coe
        tmp_nn = sigma_nn;
     }
     else if (nn_bit_str == sigma_nn) {
+        // sigma^2 = I
         tmp_nn = 0;
-        curr_coeff *= 0.25;
     }
     else {
         tmp_nn = permute_norm(nn_bit_str, sigma_nn, sgn);
         if ((pos == 0 && nn == 1) || (pos == n_bits - 2 && nn == 0)) {
-            curr_coeff *= -0.5*I*sgn*pow(-1.0, nn);
+            curr_coeff *= -1.0*I*sgn*pow(-1.0, nn);
         }
         else {
-            curr_coeff *= 0.5*I*sgn*pow(-1.0, nn);
+            curr_coeff *= 1.0*I*sgn*pow(-1.0, nn);
         }
     }
     // Shift back to correct place.
@@ -444,7 +539,7 @@ uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coe
     return(onsite_tmp);
 }
 
-void merge_bits(uint16_t input_bit_str, unsigned long int new_bits[], int pos) {
+void merge_bits(uint32_t input_bit_str, unsigned long int new_bits[], int pos) {
 
     int i;
     for (i = 0; i < 2; i++) {
@@ -477,18 +572,29 @@ int permute(int a, int b, double &sign) {
 int permute_norm(int a, int b, double &sign) {
 
     int epsilon[3], res;
-    epsilon[0] = a;
-    epsilon[1] = b;
 
-    for (int i = 1; i < 4; i++) {
-        if((i != a) && (i !=b )) {
-            epsilon[2] = i;
-            res = i;
-        }
+    if (a == 0) {
+        sign = 1.0;
+        return(b);
     }
+    else if (b == 0) {
+        sign = 1.0;
+        return(a);
+    }
+    else {
+        epsilon[0] = a;
+        epsilon[1] = b;
 
-    sign = pow(-1.0, insertion_sort(epsilon, 3));
-    return(res);
+        for (int i = 1; i < 4; i++) {
+            if((i != a) && (i !=b )) {
+                epsilon[2] = i;
+                res = i;
+            }
+        }
+
+        sign = pow(-1.0, insertion_sort(epsilon, 3));
+        return(res);
+    }
 }
 
 int insertion_sort(int array[], int length) {
@@ -509,7 +615,7 @@ int insertion_sort(int array[], int length) {
     return(counter);
 }
 
-void find_set_bits(uint16_t spins, vector<int>& positions) {
+void find_set_bits(uint32_t spins, vector<int>& positions) {
 
     int i;
 
@@ -523,7 +629,7 @@ void find_set_bits(uint16_t spins, vector<int>& positions) {
 
 }
 
-int count_bits(uint16_t inp) {
+int count_bits(uint32_t inp) {
 
     int i;
 
