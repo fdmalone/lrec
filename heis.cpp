@@ -63,7 +63,7 @@ uint64_t bit_cycle[2] = {1, 2};
 int n_bits = 64;
 int n_sites = n_bits/2;
 int n_neigh[2] = {Left, Right};
-double J[3] = {1.0, 1.0, 1.0};
+double J[3] = {1.0, 1.0, 0.0};
 cplxd I_c(0.0,1.0);
 
 // fin_trace constants
@@ -172,7 +172,7 @@ void commute_wrapper(uint64_t initial_bit_str, cplxd initial_coeff) {
     lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
     cout << lanc_b[0] << endl;
 
-    for (dep = 0; dep < 10; dep++) {
+    for (dep = 0; dep < 24; dep++) {
         max = -1;
         // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
         // Hopefully should reduce on reallocation of array, although probably too large at the same time.
@@ -239,16 +239,11 @@ void commute_wrapper(uint64_t initial_bit_str, cplxd initial_coeff) {
     }
 
     ofstream myfile;
-    myfile.open("semi_z_xxx_model.dat");
+    myfile.open("semi_z_xx_model.dat");
     double omega = -5, res;
-    for (i = 0; i < 32; i++) {
-        lanc_a[i] = 0;
-        lanc_b[i] = 0.5*(i+1);
-        cout << lanc_a[i] << lanc_b[i] << endl;
-    }
     for (i = 0; i < 1024; i++) {
         omega = omega + 0.01;
-        res = continued_fraction(lanc_a, lanc_b, 32, omega);
+        res = continued_fraction(lanc_a, lanc_b, 24, omega);
         myfile << omega << "   " << res << "   " << 4*sqrt(1-omega*omega) << endl;
     }
     myfile.close();
