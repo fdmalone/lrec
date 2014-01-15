@@ -11,12 +11,12 @@ using namespace std;
 typedef complex<double> cplxd;
 
 // Bit Manipulation.
-int count_bits(uint32_t inp);
 uint32_t rotl(uint32_t x, int n);
 uint32_t rotr(uint32_t x, int n);
 // Bit twiddling hacks
 uint32_t swap_bits(uint32_t x);
 void find_set_bits(uint32_t spins, vector<int>& positions);
+int count_bits(uint32_t inp);
 
 // Sorting;
 int permute(int a, int b, double &sign);
@@ -42,10 +42,13 @@ int boundary(int pos, int nn);
 void add_new_bit_str(uint32_t bits[], cplxd coeffs[], uint32_t rank[], int length, vector<uint32_t> &bit_str_mod, vector<cplxd> &coeff_mod, int &max);
 void print(vector<uint32_t> input);
 void print_c(vector<cplxd> input);
+void remove_zeros(vector<uint32_t> &input, vector<cplxd> &coeffs);
 
 // Recursion.
 double continued_fraction(double a[], double b[], double num, double omega);
 double gs_trace(vector<uint32_t> input_a, vector<uint32_t> input_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b, uint32_t ground_state[], double gs_coeff[], int iter);
+
+// Exact Diagonalisation.
 
 enum nearest {
     Left,
@@ -77,7 +80,8 @@ cplxd spin_coeff[4][2] = {{1.0,1.0},{1.0,1.0},{I_c,I_c},{1.0,-1.0}};
 
 int main(){
 
-    //commute_wrapper(1, 1.0);
+    commute_wrapper(1, 1.0);
+    /*
     vector<uint32_t> a, b;
     vector<cplxd> c_a, c_b;
     c_a.push_back(1.0);
@@ -87,6 +91,7 @@ int main(){
     uint32_t gs[4] = {0, 1, 2, 3};
     double gs_c[4] = {0.5, 0.5, 0.5, 0.5};
     cout << gs_trace(a, b, c_a, c_b, gs, gs_c, 0) << endl;
+    */
 
 
 }
@@ -155,7 +160,7 @@ void commute_wrapper(uint32_t initial_bit_str, cplxd initial_coeff) {
     uint32_t rank[4];
     uint32_t onsite_bits, nn_bits;
     uint32_t new_bits, bits_sig[4];
-    double lanc_a[14], lanc_b[14], J = 1.0, delta;
+    double lanc_a[1000], lanc_b[1000], J = 1.0, delta;
     cplxd new_coeff, tmp_coeff, coeff_sig[4];
     vector<uint32_t> bit_str_0, bit_str_i, bit_str_old;
     vector<cplxd> coeff_array_0, coeff_array_i, coeff_array_old;
@@ -167,7 +172,7 @@ void commute_wrapper(uint32_t initial_bit_str, cplxd initial_coeff) {
     lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
     cout << lanc_b[0] << endl;
 
-    for (dep = 0; dep < 4; dep++) {
+    for (dep = 0; dep < 20; dep++) {
         max = -1;
         // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
         // Hopefully should reduce on reallocation of array, although probably too large at the same time.
@@ -193,10 +198,6 @@ void commute_wrapper(uint32_t initial_bit_str, cplxd initial_coeff) {
                             bits_sig[i] = new_bits;
                             coeff_sig[i] = tmp_coeff;
                             tmp_coeff = coeff_array_0[bits];
-                            if (abs(coeff_array_0[bits]) > 1e-10) {
-                                //cout << bitset<16>(bit_str_0[bits]) << "   " << bitset<16>(new_bits) <<"  "<<coeff_sig[i]<<"   "<<tmp_coeff << endl;
-                            }
-
                             i = i + 1;
                         }
                     }
@@ -208,6 +209,7 @@ void commute_wrapper(uint32_t initial_bit_str, cplxd initial_coeff) {
             }
         }
         // a_i = Tr(Lu, u)
+        remove_zeros(bit_str_i, coeff_array_i);
         lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
         // Calculate Lu - a_i u.
         merge_lists(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, -1.0*lanc_a[dep]);
@@ -216,10 +218,11 @@ void commute_wrapper(uint32_t initial_bit_str, cplxd initial_coeff) {
         // b_{i+1} = Tr(V_{i+1}, V_{i+1})
         lanc_b[dep+1] = sqrt(inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i));
         //cout << lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
-        cout <<dep<<"   " << lanc_a[dep]<<"   " <<lanc_b[dep+1] << endl;
+        cout <<dep<<"   " << lanc_a[dep]<<"   " <<lanc_b[dep+1]*lanc_b[dep+1] << endl;
         //recursion(bit_str_old, bit_str_0, bit_str_i, coeff_array_old, coeff_array_0, coeff_array_i);
-        //cout <<bit_str_old.size()<<"  " << bit_str_0.size() << "  " << bit_str_i.size() <<"  "<<bit_str_i.capacity() << endl;
         divide(coeff_array_i, lanc_b[dep+1]);
+        remove_zeros(bit_str_i, coeff_array_i);
+        cout <<bit_str_old.size()<<"  " << bit_str_0.size() << "  " << bit_str_i.size() <<"  "<<bit_str_i.capacity() << endl;
         bit_str_old = bit_str_0;
         bit_str_0 = bit_str_i;
         //cout << bit_str_0.size() << "  " << bit_str_i.size() << bit_str_i[0] << "  " <<bit_str_0[0]<< endl;
@@ -229,18 +232,41 @@ void commute_wrapper(uint32_t initial_bit_str, cplxd initial_coeff) {
         coeff_array_i.resize(0);
     }
 
+    /*
     ofstream myfile;
     myfile.open("spect.dat");
-    double omega = -5.0, res;
-    for (i = 0; i < 1000; i++) {
+    double omega = -5, res;
+    for (i = 0; i < 50; i++) {
+        lanc_a[i] = 0;
+        lanc_b[i] = 0.5*(i+1);
+        cout << lanc_a[i] << lanc_b[i] << endl;
+    }
+    for (i = 0; i < 1024; i++) {
         omega = omega + 0.01;
-        res = continued_fraction(lanc_a, lanc_b, dep, omega);
-        myfile << omega << "   " << res << endl;
+        res = continued_fraction(lanc_a, lanc_b, 50, omega);
+        myfile << omega << "   " << res << "   " << 2*sqrt(3.14159)*exp(-omega*omega) << endl;
     }
     myfile.close();
+    */
 
 }
 
+void remove_zeros(vector<uint32_t> &input, vector<cplxd> &coeffs) {
+
+    int start = 0;
+
+    do {
+        if (abs(coeffs[start]) < 1e-6) {
+            coeffs.erase(coeffs.begin() + start);
+            input.erase(input.begin() + start);
+            start = start;
+        }
+        else {
+            start++;
+        }
+    } while(start < coeffs.size());
+
+}
 
 double continued_fraction(double a[], double b[], double num, double omega) {
 
@@ -248,23 +274,25 @@ double continued_fraction(double a[], double b[], double num, double omega) {
     double eps;
     cplxd eta, f0, c0, d0, delta, tiny_num;
 
-    eta = (0.0, 0.001);
+    eta = 0.005*I_c;
     tiny_num = 1e-30;
     eps = 1e-15;
     f0 = tiny_num;
     c0 = f0;
     d0 = 0;
 
+    //cout << eta << "   " << tiny_num << "   " << eps << "   " << d0 << endl;
+
     for (i = 0; i < num; i++) {
 
-        cout << a[i] << "   " << b[i] << endl;
-        d0 = omega - eta - a[i] - b[i]*b[i]*d0;
+        //cout << a[i] << "   " << b[i] << endl;
+        d0 = omega - eta - a[i] - b[i]*d0;
 
         if (abs(d0) < eps) {
             d0 = tiny_num;
         }
 
-        c0 = omega - eta - a[i] - b[i]*b[i]/c0;
+        c0 = omega - eta - a[i] - b[i]/c0;
 
         if (abs(c0) < eps) {
             c0 = tiny_num;
@@ -276,7 +304,7 @@ double continued_fraction(double a[], double b[], double num, double omega) {
 
     }
 
-    return(-1.0/3.1415*f0.imag());
+    return(-2.0*f0.imag());
 
 }
 
