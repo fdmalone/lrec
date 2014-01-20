@@ -7,10 +7,12 @@
 #include <bitset>
 #include <armadillo>
 
+
+// Checked relative to Hande ED. Factor of 4 difference in eigenvalues.
 using namespace std;
 using namespace arma;
 
-int n_si = 2;
+int n_si = 8;
 int n_states = (int)pow(2.0, n_si);
 double Ji = 1.0;
 
@@ -70,7 +72,6 @@ int count_bits(uint16_t inp) {
 
 }
 
-
 void states(uint16_t *I) {
 
     int r = 0;
@@ -82,9 +83,6 @@ void states(uint16_t *I) {
                 r++;
             }
         }
-    }
-    for (int i = 0; i < n_states; i++) {
-        cout << i << "    " << bitset<16>(I[i]) << endl;
     }
 }
 
@@ -136,6 +134,7 @@ void diag_heis(vector<double> &eigen, uint16_t *I) {
     vec e_val, gs;
     mat e_vec;
     eig_sym(e_val, e_vec, HAM);
+    cout << e_val << endl;
     gs = e_vec.col(0);
     eigen = conv_to< vector<double> >::from(gs);
 
