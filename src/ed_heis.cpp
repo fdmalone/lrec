@@ -14,7 +14,7 @@ using namespace arma;
 
 int n_si = 8;
 int n_states = (int)pow(2.0, n_si);
-double Ji = 1.0;
+double Ji = -1.0;
 
 int look_up(uint16_t *I, uint16_t state) {
 
@@ -86,20 +86,21 @@ void states(uint16_t *I) {
     }
  }
 
-void vec_noise(vec &input, double factor) {
+double vec_noise(vector<double> &input, double factor) {
 
-    ofstream file_r;
-    file_r.open("rand_nums.dat", ios::out | ios::app);
+    //ofstream file_r;
+    //file_r.open("rand_nums.dat", ios::out | ios::app);
 
-    double r;
+    double r, norm = 0;
 
     for (int i = 0; i < n_states; i++) {
         r = ((double)rand()/RAND_MAX - 0.5)*factor;
-        file_r << r << endl;
+        //file_r << r << endl;
         input[i] += r;
+        norm += input[i]*input[i];
     }
-
-    file_r.close();
+    return(norm);
+    //file_r.close();
 
 }
 
@@ -112,7 +113,7 @@ void energy_noise(mat H, vec input) {
     vec tmp = input;
 
     for (int i = 0; i < N_its; i++) {
-        vec_noise(tmp, 0.1);
+        //vec_noise(tmp, 0.1);
         e_exact = conv_to< double >::from(input.t()*H*input);
         e_rand = conv_to< double >::from(tmp.t()*H*tmp);
         file << i << "  " << e_exact << "   " << e_rand << endl;

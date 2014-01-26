@@ -30,7 +30,8 @@ void insert_element(vector<uint16_t> &a, int pos, int res, int max, uint16_t val
 void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val);
 double inf_trace(vector<uint16_t> bit_str_a, vector<uint16_t> bit_str_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b);
 void merge_lists(vector<uint16_t> &bit_str_new, vector<uint16_t> bit_str_old, vector<cplxd> &coeff_new, vector<cplxd> coeff_old, double mult_a);
-void divide(vector<cplxd> &input, double divisor);
+void divide(vector<double> &input, double divisor);
+void divide_c(vector<cplxd> &input, double divisor);
 int look_up_table(uint16_t input, uint16_t arr[]);
 
 
@@ -64,9 +65,10 @@ uint16_t bit_cycle[2] = {1, 2};
 int n_bits = 16;
 int n_sites = n_bits/2;
 int n_neigh[2] = {Left, Right};
-double J[3] = {1.0, 1.0, 0.0};
+double J[3] = {-1.0, -1.0, 0.0};
+double a_av[8], b_av[8];
 cplxd I_c(0.0,1.0);
-vector<double> gs_vec;
+vector<double> gs_vec, tmp_vec;
 uint16_t *configs;
 int num_states = (int)pow(2.0, n_sites);
 
@@ -88,23 +90,33 @@ int main() {
 
     configs = new uint16_t [num_states];
     diag_heis(gs_vec, configs);
-    for (int i = 0; i < gs_vec.size(); i++) {
-       // cout << bitset<16>(configs[i]) << "   " <<gs_vec[i] << endl;
+    double div = 0;
+
+
+    for (int j = 0; j < 8; j++) {
+        a_av[j] = 0;
+        b_av[j] = 0;
     }
-    commute_wrapper(3, 1.0);
-    /*
-    vector<uint16_t> a, b;
-    vector<cplxd> c_a, c_b;
-    c_a.push_back(1.0);
-    c_b.push_back(2.0);
-    a.push_back(1);
-    b.push_back(3);
-    uint16_t gs[4] = {0, 1, 2, 3};
-    double gs_c[4] = {0.5, 0.5, 0.5, 0.5};
-    cout << gs_trace(a, b, c_a, c_b, gs, gs_c, 0) << endl;
-    */
+    for (int i = 0; i < 10; i++) {
+        tmp_vec = gs_vec;
+        div = vec_noise(tmp_vec, 0.1);
+        divide(tmp_vec, sqrt(div));
+        commute_wrapper(3, 1.0);
+    }
+    for (int i = 0; i < 8; i++) {
+        a_av[i] = a_av[i]/5.0;
+        b_av[i] = b_av[i]/5.0;
+    }
 
-
+    ofstream myfile;
+    myfile.open("xx_T0_lan_r_av_2.dat");
+    double omega = -5, res;
+    for (int i = 0; i < 1024; i++) {
+        omega = omega + 0.01;
+        res = continued_fraction(a_av, b_av, 7, omega);
+        myfile << omega << "   " << res << "   " << 4*sqrt(1-omega*omega) << endl;
+    }
+    myfile.close();
 }
 
 int boundary(int pos, int nn) {
@@ -187,6 +199,9 @@ int look_up_table(uint16_t input, uint16_t arr[]) {
 
 void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
 
+    ofstream file;
+    file.open("rand_coeffs.dat", ios::out | ios::app);
+
     int bits, pos, nn, sig, i, num_bit_str, disp_start, disp_end, dep, disp, shift, max;
     uint16_t rank[4];
     uint16_t onsite_bits, nn_bits;
@@ -200,10 +215,10 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     coeff_array_0.push_back(initial_coeff);
     i = 0;
     delta = 1;
-    lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, gs_vec).real();
+    lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, tmp_vec).real();
     cout <<"THIS: "<< lanc_b[0] << endl;
 
-    for (dep = 0; dep < 8; dep++) {
+    for (dep = 0; dep < 7; dep++) {
         max = -1;
         // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
         // Hopefully should reduce on reallocation of array, although probably too large at the same time.
@@ -246,24 +261,26 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         remove_zeros(bit_str_i, coeff_array_i);
         //print_c(coeff_array_i);
         //lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
-        lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, gs_vec).real();
+        lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, tmp_vec).real();
         // Calculate Lu - a_i u.
-        cout << lanc_a[dep] << endl;
+        //cout << lanc_a[dep] << endl;
         merge_lists(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, -1.0*lanc_a[dep]);
         //print_c(coeff_array_i);
         // Caluculate V = Lu_i - a_i u_i - b[i] u_i-1
         merge_lists(bit_str_i, bit_str_old, coeff_array_i, coeff_array_old, -1.0*lanc_b[dep]);
         // b_{i+1} = Tr(V_{i+1}, V_{i+1})
         //lanc_b[dep+1] = sqrt(inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i));
-        lanc_b[dep+1] = sqrt(gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, gs_vec).real());
+        lanc_b[dep+1] = sqrt(gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, tmp_vec).real());
         //cout << lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
         //print_c(coeff_array_i);
         if (lanc_b[dep+1] < de) break;
-        cout <<dep+1<<"   " <<lanc_a[dep]<< "  " <<lanc_b[dep+1]<<"   " <<lanc_b[dep+1]*lanc_b[dep+1] << endl;
+        file <<dep<< "   " <<lanc_a[dep]<< "  " <<lanc_b[dep] << endl;
+        a_av[dep] += lanc_a[dep];
+        b_av[dep] += lanc_b[dep];
         //recursion(bit_str_old, bit_str_0, bit_str_i, coeff_array_old, coeff_array_0, coeff_array_i);
-        divide(coeff_array_i, lanc_b[dep+1]);
+        divide_c(coeff_array_i, lanc_b[dep+1]);
         remove_zeros(bit_str_i, coeff_array_i);
-        cout <<bit_str_old.size()<<"  " << bit_str_0.size() << "  " << bit_str_i.size() <<"  "<<bit_str_i.capacity() << endl;
+        //cout <<bit_str_old.size()<<"  " << bit_str_0.size() << "  " << bit_str_i.size() <<"  "<<bit_str_i.capacity() << endl;
         bit_str_old = bit_str_0;
         bit_str_0 = bit_str_i;
         //cout << bit_str_0.size() << "  " << bit_str_i.size() << bit_str_i[0] << "  " <<bit_str_0[0]<< endl;
@@ -273,15 +290,8 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         coeff_array_i.resize(0);
     }
 
-    ofstream myfile;
-    myfile.open("model.dat");
-    double omega = -5, res;
-    for (i = 0; i < 1024; i++) {
-        omega = omega + 0.01;
-        res = continued_fraction(lanc_a, lanc_b, 8, omega);
-        myfile << omega << "   " << res << "   " << 4*sqrt(1-omega*omega) << endl;
-    }
-    myfile.close();
+    file.close();
+
 
 }
 
@@ -353,8 +363,13 @@ void print_c(vector<cplxd> input) {
     }
 }
 
+void divide(vector<double> &input, double divisor) {
 
-void divide(vector<cplxd> &input, double divisor) {
+    for (int i = 0; i < input.size(); i++ ) {
+        input[i] = input[i]/divisor;
+    }
+}
+void divide_c(vector<cplxd> &input, double divisor) {
 
     for (int i = 0; i < input.size(); i++ ) {
         input[i] = input[i]/divisor;

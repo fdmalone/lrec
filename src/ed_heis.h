@@ -14,7 +14,7 @@ int count_bits(uint16_t inp);
 
 void states(uint16_t *I);
 
-void vec_noise(vec &input, double factor);
+double vec_noise(vector<double> &input, double factor);
 
 void energy_noise(mat H, vec input);
 
