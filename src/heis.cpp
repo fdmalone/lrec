@@ -64,7 +64,7 @@ uint16_t bit_cycle[2] = {1, 2};
 int n_bits = 16;
 int n_sites = n_bits/2;
 int n_neigh[2] = {Left, Right};
-double J[3] = {1.0, 1.0, 1.0};
+double J[3] = {1.0, 1.0, 0.0};
 cplxd I_c(0.0,1.0);
 vector<double> gs_vec;
 uint16_t *configs;
@@ -89,9 +89,9 @@ int main() {
     configs = new uint16_t [num_states];
     diag_heis(gs_vec, configs);
     for (int i = 0; i < gs_vec.size(); i++) {
-        //cout << gs_vec[i] << endl;
+       // cout << bitset<16>(configs[i]) << "   " <<gs_vec[i] << endl;
     }
-    commute_wrapper(1, 1.0);
+    commute_wrapper(3, 1.0);
     /*
     vector<uint16_t> a, b;
     vector<cplxd> c_a, c_b;
@@ -248,6 +248,7 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         //lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
         lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, gs_vec).real();
         // Calculate Lu - a_i u.
+        cout << lanc_a[dep] << endl;
         merge_lists(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, -1.0*lanc_a[dep]);
         //print_c(coeff_array_i);
         // Caluculate V = Lu_i - a_i u_i - b[i] u_i-1
@@ -273,7 +274,7 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     }
 
     ofstream myfile;
-    myfile.open("semi_x_xx_model.dat");
+    myfile.open("model.dat");
     double omega = -5, res;
     for (i = 0; i < 1024; i++) {
         omega = omega + 0.01;

@@ -36,7 +36,7 @@ double h_zz(uint16_t *I, uint16_t input) {
         sz +=  Ji/4.0*pow(-1.0, bit_i + bit_j);
     }
 
-    return(sz);
+    return(0*sz);
 
 }
 
@@ -84,7 +84,7 @@ void states(uint16_t *I) {
             }
         }
     }
-}
+ }
 
 void vec_noise(vec &input, double factor) {
 
@@ -134,7 +134,7 @@ void diag_heis(vector<double> &eigen, uint16_t *I) {
     vec e_val, gs;
     mat e_vec;
     eig_sym(e_val, e_vec, HAM);
-    cout << e_val << endl;
+    //cout << e_val << endl;
     gs = e_vec.col(0);
     eigen = conv_to< vector<double> >::from(gs);
 
