@@ -16,6 +16,6 @@ void states(uint16_t *I);
 
 double vec_noise(vector<double> &input, double factor);
 
-void energy_noise(mat H, vec input);
+double energy_noise(vector<double> input, int it, double run, double e_run);
 
 void diag_heis(vector<double> &eigen, uint16_t *I);

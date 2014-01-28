@@ -15,6 +15,8 @@ using namespace arma;
 int n_si = 8;
 int n_states = (int)pow(2.0, n_si);
 double Ji = -1.0;
+mat H(n_states, n_states);
+vec e_val;
 
 int look_up(uint16_t *I, uint16_t state) {
 
@@ -104,23 +106,19 @@ double vec_noise(vector<double> &input, double factor) {
 
 }
 
-void energy_noise(mat H, vec input) {
+double energy_noise(vector<double> input, int it, double run, double e_run) {
 
     ofstream file;
-    file.open("rand_noise.dat");
-    int N_its = 1000;
+    file.open("../T0_data/rand_noise.dat", ios::out | ios::app);
     double e_rand, e_exact, e_av = 0;
     vec tmp = input;
 
-    for (int i = 0; i < N_its; i++) {
-        //vec_noise(tmp, 0.1);
-        e_exact = conv_to< double >::from(input.t()*H*input);
-        e_rand = conv_to< double >::from(tmp.t()*H*tmp);
-        file << i << "  " << e_exact << "   " << e_rand << endl;
-        tmp = input;
-        e_av += e_rand;
-    }
-    cout << "Average energy: " << e_av/N_its << endl;
+    tmp = conv_to< vec >::from(input);
+    e_exact = conv_to< double >::from(tmp.t()*H*tmp);
+    e_rand = conv_to< double >::from(tmp.t()*H*tmp);
+    e_run += e_rand;
+    file << it << "  " << e_val(0)  << "   " << e_rand << "   " << e_run/run<< endl;
+    return (e_run);
     file.close();
 
 }
@@ -128,13 +126,12 @@ void energy_noise(mat H, vec input) {
 void diag_heis(vector<double> &eigen, uint16_t *I) {
 
     states(I);
-    mat HAM(n_states, n_states);
-    HAM.zeros();
-    hamiltonian(HAM, I);
+    H.zeros();
+    hamiltonian(H, I);
     //cout << HAM << endl;
-    vec e_val, gs;
+    vec  gs;
     mat e_vec;
-    eig_sym(e_val, e_vec, HAM);
+    eig_sym(e_val, e_vec, H);
     //cout << e_val << endl;
     gs = e_vec.col(0);
     eigen = conv_to< vector<double> >::from(gs);

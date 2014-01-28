@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <fstream>
 #include <armadillo>
+#include "read_vec.h"
 #include "ed_heis.h"
 
 using namespace std;
@@ -33,8 +34,6 @@ void merge_lists(vector<uint16_t> &bit_str_new, vector<uint16_t> bit_str_old, ve
 void divide(vector<double> &input, double divisor);
 void divide_c(vector<cplxd> &input, double divisor);
 int look_up_table(uint16_t input, uint16_t arr[]);
-
-
 
 // Commutation/recursion.
 uint16_t merge_bits(uint16_t mod_bits, uint16_t input_bit_str, int pos, int nn);
@@ -71,6 +70,7 @@ cplxd I_c(0.0,1.0);
 vector<double> gs_vec, tmp_vec;
 uint16_t *configs;
 int num_states = (int)pow(2.0, n_sites);
+int N_its = 20;
 
 double de = 1e-12;
 // fin_trace constants
@@ -82,41 +82,83 @@ uint16_t xor_array[4] = {0,1,1,0};
 // spin_coeff:
 // arranged as above for rows, columns = {down, up} to conincide with
 // definition of basis in exact diagonalisation i.e. 0 = down.
-// These are the coefficintes which result from acting on up or
+// These are the coefficintes which result from acting on an up or
 // down with one of the four matrices.
 cplxd spin_coeff[4][2] = {{1.0,1.0},{1.0,1.0},{-I_c,I_c},{-1.0,1.0}};
 
 int main() {
 
     configs = new uint16_t [num_states];
+    int shift_a, shift_b;
     diag_heis(gs_vec, configs);
-    double div = 0;
-
+    double div = 0, N0 = 0, erun = 0;
+    vector<int> lengths;
+    vector<uint16_t> bas_el, tmp_el_a, tmp_el_b;
+    vector<cplxd> bas_coeff, tmp_coeff_a, tmp_coeff_b;
 
     for (int j = 0; j < 8; j++) {
         a_av[j] = 0;
         b_av[j] = 0;
     }
-    for (int i = 0; i < 10; i++) {
+    tmp_vec = gs_vec;
+    commute_wrapper(3,1.0);
+    ofstream out;
+    out.open("overlap_matrix.dat");
+
+    read_output(lengths, bas_el, bas_coeff);
+    mat overlap(lengths.size(), lengths.size());
+    cout << lengths.size() <<"   " <<bas_coeff[0] << endl;
+    shift_a = 0;
+    shift_b = 0;
+
+    for (int i = 0; i < lengths.size(); i++) {
+        //cout << shift_a <<"   "<<lengths[i]+shift_a << endl;
+        tmp_el_a.assign(bas_el.begin()+shift_a, bas_el.begin()+lengths[i]+shift_a);
+        tmp_coeff_a.assign(bas_coeff.begin()+shift_a, bas_coeff.begin()+lengths[i]+shift_a);
+        //cout << tmp_el_a.size() << endl;
+        for (int j = 0; j < lengths.size(); j++) {
+            tmp_el_b.assign(bas_el.begin()+shift_b, bas_el.begin()+lengths[j]+shift_b);
+            tmp_coeff_b.assign(bas_coeff.begin()+shift_b, bas_coeff.begin()+lengths[j]+shift_b);
+            //print_c(tmp_coeff_b);
+            cout << gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec) << "   ";
+            //overlap(i,j) = gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec).real();
+            //overlap(i,j) = inf_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b);
+            if (abs(overlap(i,j)) < 1e-6) overlap(i,j) = 0.0;
+            //cout << overlap(i,j) << "   ";
+            //cout << shift_a << "  " << shift_b<<"  "<<lengths[i] <<"  "<<lengths[j] << "   " << i << "  " << j << endl;
+            shift_b += lengths[j];
+        }
+        shift_a += lengths[i];
+        cout << endl;
+        shift_b = 0;
+    }
+    out.close();
+
+    /*
+    for (int i = 0; i < N_its; i++) {
         tmp_vec = gs_vec;
-        div = vec_noise(tmp_vec, 0.1);
-        divide(tmp_vec, sqrt(div));
+        div = vec_noise(tmp_vec, 0.05);
+        N0 += div;
+        erun = energy_noise(tmp_vec, i, N0, erun);
+        cout << N0 << "   " << erun << endl;
+        //divide(tmp_vec, sqrt(div));
         commute_wrapper(3, 1.0);
     }
     for (int i = 0; i < 8; i++) {
-        a_av[i] = a_av[i]/5.0;
-        b_av[i] = b_av[i]/5.0;
+        a_av[i] = a_av[i]/(double)(N_its);
+        b_av[i] = b_av[i]/(double)(N_its);
     }
 
     ofstream myfile;
-    myfile.open("xx_T0_lan_r_av_2.dat");
+    myfile.open("../T0_data/xx_T0_lan_r_av_01.dat");
     double omega = -5, res;
     for (int i = 0; i < 1024; i++) {
         omega = omega + 0.01;
-        res = continued_fraction(a_av, b_av, 7, omega);
+        res = continued_fraction(a_av, b_av, 8, omega);
         myfile << omega << "   " << res << "   " << 4*sqrt(1-omega*omega) << endl;
     }
     myfile.close();
+    */
 }
 
 int boundary(int pos, int nn) {
@@ -143,6 +185,7 @@ cplxd gs_trace(vector<uint16_t> input_a, vector<uint16_t> input_b, vector<cplxd>
     for (j = 0; j < input_b.size(); j++) {
             basis_element = ground_state[iter];
             //cout <<"initial: " << bitset<16>(basis_element) << endl;
+            //cout << iter << endl;
             basis_coeff = gs_coeff[iter];
             //cout << bitset<16>(input_a[i]) << "   " << bitset<16>(input_b[j]) <<"  "<< bitset<4>(basis_element) << endl;
             if (abs(basis_coeff) > de) {
@@ -199,8 +242,11 @@ int look_up_table(uint16_t input, uint16_t arr[]) {
 
 void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
 
-    ofstream file;
-    file.open("rand_coeffs.dat", ios::out | ios::app);
+    ofstream file1, file2, file3;
+    //file.open("../T0_data/rand_coeffs.dat", ios::out | ios::app);
+    file1.open("basis_lengths.dat");
+    file2.open("basis_elements.dat");
+    file3.open("basis_coeffs.dat");
 
     int bits, pos, nn, sig, i, num_bit_str, disp_start, disp_end, dep, disp, shift, max;
     uint16_t rank[4];
@@ -215,7 +261,10 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     coeff_array_0.push_back(initial_coeff);
     i = 0;
     delta = 1;
-    lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, tmp_vec).real();
+    //lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, tmp_vec).real();
+    lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
+    b_av[0] += lanc_b[0];
+    divide_c(coeff_array_0,sqrt(lanc_b[0]));
     cout <<"THIS: "<< lanc_b[0] << endl;
 
     for (dep = 0; dep < 7; dep++) {
@@ -273,10 +322,16 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         lanc_b[dep+1] = sqrt(gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, tmp_vec).real());
         //cout << lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
         //print_c(coeff_array_i);
-        if (lanc_b[dep+1] < de) break;
-        file <<dep<< "   " <<lanc_a[dep]<< "  " <<lanc_b[dep] << endl;
         a_av[dep] += lanc_a[dep];
-        b_av[dep] += lanc_b[dep];
+        b_av[dep+1] += lanc_b[dep+1];
+        cout <<dep<< "   " <<lanc_a[dep]<< "  " <<lanc_b[dep]*lanc_b[dep] <<"  "<<bit_str_0.size() << endl;
+        file1 << bit_str_0.size() << endl;
+        for (int iter = 0; iter < bit_str_0.size(); iter++) {
+            file2 << bit_str_0[iter] << endl;
+            file3 << coeff_array_0[iter] << endl;
+        }
+
+        if (lanc_b[dep+1] < de) break;
         //recursion(bit_str_old, bit_str_0, bit_str_i, coeff_array_old, coeff_array_0, coeff_array_i);
         divide_c(coeff_array_i, lanc_b[dep+1]);
         remove_zeros(bit_str_i, coeff_array_i);
@@ -290,7 +345,9 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         coeff_array_i.resize(0);
     }
 
-    file.close();
+    file1.close();
+    file2.close();
+    file3.close();
 
 
 }
