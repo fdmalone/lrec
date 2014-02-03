@@ -67,10 +67,11 @@ int n_neigh[2] = {Left, Right};
 double J[3] = {-1.0, -1.0, 0.0};
 double a_av[8], b_av[8];
 cplxd I_c(0.0,1.0);
+double eta_g = 0.01;
 vector<double> gs_vec, tmp_vec;
 uint16_t *configs;
 int num_states = (int)pow(2.0, n_sites);
-int N_its = 20;
+int N_its = 50;
 
 double de = 1e-12;
 // fin_trace constants
@@ -102,6 +103,7 @@ int main() {
     }
     tmp_vec = gs_vec;
     commute_wrapper(3,1.0);
+    /*
     ofstream out;
     out.open("overlap_matrix.dat");
 
@@ -120,8 +122,8 @@ int main() {
             tmp_el_b.assign(bas_el.begin()+shift_b, bas_el.begin()+lengths[j]+shift_b);
             tmp_coeff_b.assign(bas_coeff.begin()+shift_b, bas_coeff.begin()+lengths[j]+shift_b);
             //print_c(tmp_coeff_b);
-            cout << gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec) << "   ";
-            //overlap(i,j) = gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec).real();
+            //cout << gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec) << "   ";
+            overlap(i,j) = gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec).real();
             //overlap(i,j) = inf_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b);
             if (abs(overlap(i,j)) < 1e-6) overlap(i,j) = 0.0;
             //cout << overlap(i,j) << "   ";
@@ -129,36 +131,123 @@ int main() {
             shift_b += lengths[j];
         }
         shift_a += lengths[i];
-        cout << endl;
+        //cout << endl;
         shift_b = 0;
     }
     out.close();
 
-    /*
+    int L = 7;
+    cplxd norm = 0;
+    cx_mat S(L,L), J(L,L), omega(L, L), jtmp(L, L), jinv(L,L), gram(L,L), g_tmp(L,L);
+    vec v_tmp;
+    gram.zeros();
+    g_tmp.eye();
+    cplxd norm_i[10];
+
+    int step = 0;
+    for (int i = 0; i < L; i++) {
+        norm = 0.0;
+        gram(i,i) = 1.0;
+        for (int m = 0; m < L; m++) {
+            for (int n = 0; n < L; n++) {
+                if (i > 0) {
+                    norm_i[step] += gram(m,i-1)*gram(n,i-1)*overlap(m,n);
+                }
+                else {
+                    norm_i[step] = 1.0;
+                }
+            }
+        }
+        norm_i[step] = sqrt(norm_i[step]);
+        cout <<"norm: " <<step<<"  "<<norm_i[step] << endl;
+        step++;
+
+        for (int j = 0; j < i; j++) {
+            for (int k = 0; k < i; k++) {
+                for (int l = 0; l < L; l++) {
+                    gram(j,i) -= gram(l,k)*overlap(i,l)*gram(j,k)/norm_i[k+1];
+                    //cout << gram(j,i) << "  " << l << "   " << k << "   " << i << "   " << j << endl;
+                }
+            }
+        }
+
+    }
+    norm = 0.0;
+    for (int l = 0; l < L; l++) {
+        for (int i = 0; i < L; i++) {
+            for (int j = 0; j < L; j++) {
+                norm += gram(i,l)*gram(j,l)*overlap(i,j);
+                //cout << norm <<"   "<< i << "  " << j <<"   "<<gram(i,2) <<"  "<<gram(j,2)<<"  "<<overlap(i,j)<< endl;
+            }
+        }
+        for (int m = 0; m < L; m++) {
+            gram(m,l) = gram(m,l)/sqrt(norm);
+        }
+    }
+    cout << norm << endl;
+    cout << gram << endl;
+
+    for (int i = 0; i < L; i++) {
+        for (int j = 0; j < L; j++) {
+            if (i == j) {
+                omega(i,j) = 1.0;
+                J(i,j) =  a_av[i];
+                S(i,j) = 1.0*overlap(i,j);
+            }
+            else {
+                omega(i,j) = 0.0;
+                S(i,j) = overlap(i,j);
+            }
+            if (j == i+1 ) {
+                J(i,j) = b_av[i];
+            }
+        }
+    }
+
+    J += J.t();
+
+    cout << inv(gram)*(J*gram) << endl;
+    vec GS;
+
+    GS = conv_to<vec>::from(gs_vec);
+
+    cout << S << endl;
+    //cout << omega << endl;
+    cout << J << endl;
+    ofstream dos;
+    dos.open("trans_dos_inf.dat");
+    double ome = -5.0;
+    cplxd ds = 0.0;
+    for (int i = 0; i < 1000; i++) {
+        ome += 0.01;
+        jtmp = inv(gram)*J*gram;
+        //jtmp = J;
+        jinv = inv(ome*omega - eta_g*I_c*omega-jtmp);
+        dos << ome << "  " << 1.0*jinv(0,0).imag() << endl;
+    }
+    */
     for (int i = 0; i < N_its; i++) {
         tmp_vec = gs_vec;
-        div = vec_noise(tmp_vec, 0.05);
+        div = vec_noise(tmp_vec, 0.1);
         N0 += div;
-        erun = energy_noise(tmp_vec, i, N0, erun);
+        erun = energy_noise(tmp_vec, i, div, erun);
         cout << N0 << "   " << erun << endl;
-        //divide(tmp_vec, sqrt(div));
+        divide(tmp_vec, sqrt(div));
         commute_wrapper(3, 1.0);
     }
     for (int i = 0; i < 8; i++) {
         a_av[i] = a_av[i]/(double)(N_its);
         b_av[i] = b_av[i]/(double)(N_its);
     }
-
     ofstream myfile;
-    myfile.open("../T0_data/xx_T0_lan_r_av_01.dat");
-    double omega = -5, res;
+    myfile.open("../T0_data/xx_exited.dat");
+    double omega_c = -5, res;
     for (int i = 0; i < 1024; i++) {
-        omega = omega + 0.01;
-        res = continued_fraction(a_av, b_av, 8, omega);
-        myfile << omega << "   " << res << "   " << 4*sqrt(1-omega*omega) << endl;
+        omega_c = omega_c + 0.01;
+        res = continued_fraction(a_av, b_av, 7, omega_c);
+        myfile << omega_c << "   " << res << "   " << endl;
     }
     myfile.close();
-    */
 }
 
 int boundary(int pos, int nn) {
@@ -264,10 +353,11 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     //lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, tmp_vec).real();
     lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
     b_av[0] += lanc_b[0];
+    cout << lanc_b[0];
     divide_c(coeff_array_0,sqrt(lanc_b[0]));
     cout <<"THIS: "<< lanc_b[0] << endl;
 
-    for (dep = 0; dep < 7; dep++) {
+    for (dep = 0; dep < 5; dep++) {
         max = -1;
         // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
         // Hopefully should reduce on reallocation of array, although probably too large at the same time.
