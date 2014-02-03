@@ -71,7 +71,7 @@ double eta_g = 0.01;
 vector<double> gs_vec, tmp_vec;
 uint16_t *configs;
 int num_states = (int)pow(2.0, n_sites);
-int N_its = 50;
+int N_its = 1000;
 
 double de = 1e-12;
 // fin_trace constants
@@ -93,17 +93,22 @@ int main() {
     int shift_a, shift_b;
     diag_heis(gs_vec, configs);
     double div = 0, N0 = 0, erun = 0;
+    double dos[1024], d_av[1024],omega_c = 0.0;
     vector<int> lengths;
     vector<uint16_t> bas_el, tmp_el_a, tmp_el_b;
     vector<cplxd> bas_coeff, tmp_coeff_a, tmp_coeff_b;
 
-    for (int j = 0; j < 8; j++) {
+    for (int j = 0; j < 7; j++) {
         a_av[j] = 0;
         b_av[j] = 0;
     }
+    for (int m = 0; m < 1024; m++) {
+        dos[m] = 0.0;
+        d_av[m] = 0.0;
+    }
     tmp_vec = gs_vec;
-    commute_wrapper(3,1.0);
-    /*
+    //commute_wrapper(3,1.0);
+
     ofstream out;
     out.open("overlap_matrix.dat");
 
@@ -135,7 +140,7 @@ int main() {
         shift_b = 0;
     }
     out.close();
-
+    /*
     int L = 7;
     cplxd norm = 0;
     cx_mat S(L,L), J(L,L), omega(L, L), jtmp(L, L), jinv(L,L), gram(L,L), g_tmp(L,L);
@@ -226,28 +231,44 @@ int main() {
         dos << ome << "  " << 1.0*jinv(0,0).imag() << endl;
     }
     */
+    ofstream myfile;
+    myfile.open("../mod_r_data/xx_01_mult_10000.dat");
     for (int i = 0; i < N_its; i++) {
+        for (int k = 0; k < 7; k++) {
+            a_av[k] = 0;
+            b_av[k] = 0;
+        }
         tmp_vec = gs_vec;
-        div = vec_noise(tmp_vec, 0.1);
+        div = vec_noise(tmp_vec, 0.01);
         N0 += div;
         erun = energy_noise(tmp_vec, i, div, erun);
-        cout << N0 << "   " << erun << endl;
+        //cout << N0 << "   " << erun << endl;
         divide(tmp_vec, sqrt(div));
         commute_wrapper(3, 1.0);
+        omega_c = 0.0;
+        for (int l = 0; l < 1024; l++) {
+            omega_c += 0.005;
+            dos[l] += continued_fraction(a_av, b_av, 7, omega_c);
+        }
     }
-    for (int i = 0; i < 8; i++) {
-        a_av[i] = a_av[i]/(double)(N_its);
-        b_av[i] = b_av[i]/(double)(N_its);
+    omega_c = 0.0;
+    for (int j = 0; j < 1024; j++) {
+        omega_c += 0.005;
+        myfile << omega_c << "   " << dos[j]/N_its << endl;
     }
+
+    myfile.close();
+    /*
     ofstream myfile;
-    myfile.open("../T0_data/xx_exited.dat");
-    double omega_c = -5, res;
+    myfile.open("../mod_r_data/xx_01_fine.dat");
+    omega_c = 0.0;
+    //double omega_c = -5, res;
     for (int i = 0; i < 1024; i++) {
-        omega_c = omega_c + 0.01;
-        res = continued_fraction(a_av, b_av, 7, omega_c);
-        myfile << omega_c << "   " << res << "   " << endl;
+        omega_c += 0.005;
+        //myfile << omega_c << "  " << dos[i]/(double)N_its << endl;
     }
     myfile.close();
+    */
 }
 
 int boundary(int pos, int nn) {
@@ -352,12 +373,12 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     delta = 1;
     //lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, tmp_vec).real();
     lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
-    b_av[0] += lanc_b[0];
+    b_av[0] = lanc_b[0];
     cout << lanc_b[0];
     divide_c(coeff_array_0,sqrt(lanc_b[0]));
     cout <<"THIS: "<< lanc_b[0] << endl;
 
-    for (dep = 0; dep < 5; dep++) {
+    for (dep = 0; dep < 7; dep++) {
         max = -1;
         // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
         // Hopefully should reduce on reallocation of array, although probably too large at the same time.
@@ -412,9 +433,9 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         lanc_b[dep+1] = sqrt(gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, tmp_vec).real());
         //cout << lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
         //print_c(coeff_array_i);
-        a_av[dep] += lanc_a[dep];
-        b_av[dep+1] += lanc_b[dep+1];
-        cout <<dep<< "   " <<lanc_a[dep]<< "  " <<lanc_b[dep]*lanc_b[dep] <<"  "<<bit_str_0.size() << endl;
+        a_av[dep] = lanc_a[dep];
+        b_av[dep+1] = lanc_b[dep+1];
+        cout <<dep<< "   " <<lanc_a[dep]<< "  " <<lanc_b[dep] <<"  "<<bit_str_0.size() << endl;
         file1 << bit_str_0.size() << endl;
         for (int iter = 0; iter < bit_str_0.size(); iter++) {
             file2 << bit_str_0[iter] << endl;

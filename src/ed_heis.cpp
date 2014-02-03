@@ -118,7 +118,7 @@ double vec_noise(vector<double> &input, double factor) {
 double energy_noise(vector<double> input, int it, double run, double e_run) {
 
     ofstream file;
-    file.open("../T0_data/rand_noise_exited.dat", ios::out | ios::app);
+    file.open("../mod_r_data/rand_noise_xx_01.dat", ios::out | ios::app);
     double e_rand, e_exact, e_av = 0;
     vec tmp = input;
 
@@ -126,7 +126,7 @@ double energy_noise(vector<double> input, int it, double run, double e_run) {
     e_exact = conv_to< double >::from(tmp.t()*H*tmp);
     e_rand = conv_to< double >::from(tmp.t()*H*tmp);
     e_run += e_rand;
-    file << it << "  " << e_val(1)  << "   " << e_rand/run << "   " << e_run/run<< endl;
+    file << it << "  " << e_val(0)  << "   " << e_rand/run << "   " << e_run/run<< endl;
     return (e_run);
     file.close();
 
