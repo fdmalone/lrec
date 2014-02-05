@@ -107,30 +107,33 @@ int main() {
         d_av[m] = 0.0;
     }
     tmp_vec = gs_vec;
-    //commute_wrapper(3,1.0);
+    commute_wrapper(3,1.0);
 
     ofstream out;
     out.open("overlap_matrix.dat");
 
     read_output(lengths, bas_el, bas_coeff);
-    mat overlap(lengths.size(), lengths.size());
     cout << lengths.size() <<"   " <<bas_coeff[0] << endl;
     shift_a = 0;
     shift_b = 0;
 
-    for (int i = 0; i < lengths.size(); i++) {
+    int size = 3;
+    vec eigv;
+    mat overlap(size, size), eigm, lambda(size, size);
+
+    for (int i = 0; i < size; i++) {
         //cout << shift_a <<"   "<<lengths[i]+shift_a << endl;
         tmp_el_a.assign(bas_el.begin()+shift_a, bas_el.begin()+lengths[i]+shift_a);
         tmp_coeff_a.assign(bas_coeff.begin()+shift_a, bas_coeff.begin()+lengths[i]+shift_a);
         //cout << tmp_el_a.size() << endl;
-        for (int j = 0; j < lengths.size(); j++) {
+        for (int j = 0; j < size; j++) {
             tmp_el_b.assign(bas_el.begin()+shift_b, bas_el.begin()+lengths[j]+shift_b);
             tmp_coeff_b.assign(bas_coeff.begin()+shift_b, bas_coeff.begin()+lengths[j]+shift_b);
             //print_c(tmp_coeff_b);
             //cout << gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec) << "   ";
             overlap(i,j) = gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec).real();
             //overlap(i,j) = inf_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b);
-            if (abs(overlap(i,j)) < 1e-6) overlap(i,j) = 0.0;
+            //if (abs(overlap(i,j)) < 1e-6) overlap(i,j) = 0.0;
             //cout << overlap(i,j) << "   ";
             //cout << shift_a << "  " << shift_b<<"  "<<lengths[i] <<"  "<<lengths[j] << "   " << i << "  " << j << endl;
             shift_b += lengths[j];
@@ -139,7 +142,82 @@ int main() {
         //cout << endl;
         shift_b = 0;
     }
+
+    lambda.zeros();
+    eig_sym(eigv, eigm, overlap);
+    for (int i = 0; i < size; i++) {
+        lambda(i,i) = eigv(i);
+    }
+
+    cx_mat J(size,size), lambda_c(size, size), eig_c(size, size);
+    lambda_c.zeros();
+
+    for (int k = 0; k < size; k++) {
+        for (int j = 0; j < size; j++) {
+            eig_c(k,j) = eigm(k,j);
+            if (j == k+1) {
+                J(k,j) = b_av[k];
+            }
+        }
+    }
+
+    J += J.t();
+
+    cout << J << endl;
+
+    for (int i = 0; i < size; i++) {
+        lambda(i,i) = sqrt(lambda(i,i));
+        lambda_c(i,i) = lambda(i,i);
+    }
+
+    cout << eig_c*lambda*eig_c.i();
+    cx_mat s_pl(size, size), s_mi(size, size), omega(size, size), jinv(size, size);
+    s_pl = eig_c*lambda_c*eig_c.i();
+
+    for (int i = 0; i < size; i++) {
+        omega(i,i) = 1.0;
+        lambda_c(i,i) = 1.0/lambda_c(i,i);
+    }
+
+    s_mi = eig_c*lambda_c*eig_c.i();
+
+    cx_mat J_tilda(size, size);
+
+    J_tilda = s_pl*J*s_pl;
+
+    cout << J_tilda << endl;
+    vec evec;
+    evec = eig_sym(J_tilda);
+    cout << evec << endl;
+
+    ofstream out2;
+    out2.open("trans_dos_inf.dat");
+    double ome = -5.0;
+    cplxd ds = 0.0;
+    for (int i = 0; i < 1000; i++) {
+        ome += 0.01;
+        jinv = (ome*omega - eta_g*I_c*omega-J_tilda).i();
+        ds = 0.0;
+        for (int j = 0; j < size; j++) {
+            ds += jinv(0,j)*overlap(0,j);
+        }
+        out2 << ome << "  " << 1.0*ds.imag() << endl;
+    }
+    out2.close();
+
+    //mat tmp(lengths.size(), lengths.size());
+
+    //for (int i = 0; i < lengths.size(); i++) {
+    //    for (int j = 0; j < lengths.size(); j++) {
+    //        tmp(i,j) = overlap(i,j)/sqrt(overlap(i,i)*overlap(j,j));
+    //    }
+    //}
+    //overlap = tmp;
+    //cout << overlap << endl;
+    //cout << svd(overlap) << endl;
+    //cout << overlap.i() << endl;
     out.close();
+
     /*
     int L = 7;
     cplxd norm = 0;
@@ -230,7 +308,6 @@ int main() {
         jinv = inv(ome*omega - eta_g*I_c*omega-jtmp);
         dos << ome << "  " << 1.0*jinv(0,0).imag() << endl;
     }
-    */
     ofstream myfile;
     myfile.open("../mod_r_data/xx_01_mult_10000.dat");
     for (int i = 0; i < N_its; i++) {
@@ -258,7 +335,6 @@ int main() {
     }
 
     myfile.close();
-    /*
     ofstream myfile;
     myfile.open("../mod_r_data/xx_01_fine.dat");
     omega_c = 0.0;
@@ -420,8 +496,8 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         // a_i = Tr(Lu, u)
         remove_zeros(bit_str_i, coeff_array_i);
         //print_c(coeff_array_i);
-        //lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
-        lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, tmp_vec).real();
+        lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
+        //lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, tmp_vec).real();
         // Calculate Lu - a_i u.
         //cout << lanc_a[dep] << endl;
         merge_lists(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, -1.0*lanc_a[dep]);
@@ -429,8 +505,8 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         // Caluculate V = Lu_i - a_i u_i - b[i] u_i-1
         merge_lists(bit_str_i, bit_str_old, coeff_array_i, coeff_array_old, -1.0*lanc_b[dep]);
         // b_{i+1} = Tr(V_{i+1}, V_{i+1})
-        //lanc_b[dep+1] = sqrt(inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i));
-        lanc_b[dep+1] = sqrt(gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, tmp_vec).real());
+        lanc_b[dep+1] = sqrt(inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i));
+        //lanc_b[dep+1] = sqrt(gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, tmp_vec).real());
         //cout << lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
         //print_c(coeff_array_i);
         a_av[dep] = lanc_a[dep];
