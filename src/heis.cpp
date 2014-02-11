@@ -77,7 +77,7 @@ double eta_g = 0.01;
 vector<double> gs_vec, tmp_vec1, tmp_vec2;
 uint16_t *configs;
 int num_states = (int)pow(2.0, n_sites);
-int N_its = 10;
+int N_its = 5000;
 bool fixed_ends = false;
 
 double de = 1e-12;

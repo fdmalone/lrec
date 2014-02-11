@@ -94,6 +94,7 @@ double vec_noise(vector<double> &input1, vector<double> &input2, double factor) 
 
     //ofstream file_r;
     //file_r.open("rand_nums.dat", ios::out | ios::app);
+    double av_prod, prod_av, av_prod_rep, prod_av_rep;
 
     double r1, r2, norm = 0;
 
