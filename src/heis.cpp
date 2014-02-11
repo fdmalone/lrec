@@ -67,15 +67,18 @@ uint16_t bit_cycle[2] = {1, 2};
 // System Globals;
 int n_bits = 16;
 int n_sites = n_bits/2;
+int init_basis = 3;
 int n_neigh[2] = {Left, Right};
-double J[3] = {-1.0, -1.0, 0.0};
-double a_av[8], b_av[8];
+double J[3] = {1.0, 1.0, 0.0};
+int depth = 8;
+double a_av[12], b_av[12];
 cplxd I_c(0.0,1.0);
 double eta_g = 0.01;
 vector<double> gs_vec, tmp_vec;
 uint16_t *configs;
 int num_states = (int)pow(2.0, n_sites);
 int N_its = 1;
+bool fixed_ends = false;
 
 double de = 1e-12;
 // fin_trace constants
@@ -94,11 +97,11 @@ cplxd spin_coeff[4][2] = {{1.0,1.0},{1.0,1.0},{-I_c,I_c},{-1.0,1.0}};
 int main() {
 
     configs = new uint16_t [num_states];
-    diag_heis(gs_vec, configs);
+    diag_heis(gs_vec, configs, fixed_ends);
     double div = 0, N0 = 0, erun = 0;
     double dos[1024], d_av[1024],omega_c = 0.0;
 
-    for (int j = 0; j < 7; j++) {
+    for (int j = 0; j < depth; j++) {
         a_av[j] = 0;
         b_av[j] = 0;
     }
@@ -106,9 +109,14 @@ int main() {
         dos[m] = 0.0;
         d_av[m] = 0.0;
     }
+
+    cout << "Peforming recursion method." << endl;
+    cout << "Starting vector: " << init_basis << endl;
+    cout << "Fixed end boundary conditions: " << fixed_ends << endl;
+
     tmp_vec = gs_vec;
-    commute_wrapper(3,1.0);
-    dos_norm(1024, -5.0, 0.01, 7);
+    commute_wrapper(init_basis,1.0);
+    //dos_norm(10024, -5.0, 0.001, depth);
 
     //int size;
     //cin >> size;
@@ -285,7 +293,7 @@ void dos_norm(int its, double omega, double step, int depth) {
     double dos;
 
     ofstream file;
-    file.open("dos.dat");
+    file.open("dos_open_act2.dat");
 
     for (int i = 0; i < its; i++) {
         omega += step;
@@ -458,14 +466,14 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     coeff_array_0.push_back(initial_coeff);
     i = 0;
     delta = 1;
-    lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, tmp_vec).real();
-    //lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
+    //lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, tmp_vec).real();
+    lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
     b_av[0] = lanc_b[0];
     cout << lanc_b[0];
     divide_c(coeff_array_0,sqrt(lanc_b[0]));
     cout <<"THIS: "<< lanc_b[0] << endl;
 
-    for (dep = 0; dep < 7; dep++) {
+    for (dep = 0; dep < depth; dep++) {
         max = -1;
         // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
         // Hopefully should reduce on reallocation of array, although probably too large at the same time.
@@ -507,8 +515,8 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         // a_i = Tr(Lu, u)
         remove_zeros(bit_str_i, coeff_array_i);
         //print_c(coeff_array_i);
-        //lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
-        lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, tmp_vec).real();
+        lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
+        //lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, tmp_vec).real();
         // Calculate Lu - a_i u.
         //cout << lanc_a[dep] << endl;
         merge_lists(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, -1.0*lanc_a[dep]);
@@ -516,8 +524,8 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         // Caluculate V = Lu_i - a_i u_i - b[i] u_i-1
         merge_lists(bit_str_i, bit_str_old, coeff_array_i, coeff_array_old, -1.0*lanc_b[dep]);
         // b_{i+1} = Tr(V_{i+1}, V_{i+1})
-        //lanc_b[dep+1] = sqrt(inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i));
-        lanc_b[dep+1] = sqrt(gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, tmp_vec).real());
+        lanc_b[dep+1] = sqrt(inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i));
+        //lanc_b[dep+1] = sqrt(gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, tmp_vec).real());
         //cout << lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
         //print_c(coeff_array_i);
         a_av[dep] = lanc_a[dep];
@@ -529,7 +537,10 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
             file3 << coeff_array_0[iter] << endl;
         }
 
-        if (lanc_b[dep+1] < de) break;
+        if (lanc_b[dep+1] < de) {
+            cout << "terminated" << endl;
+            break;
+        }
         //recursion(bit_str_old, bit_str_0, bit_str_i, coeff_array_old, coeff_array_0, coeff_array_i);
         divide_c(coeff_array_i, lanc_b[dep+1]);
         remove_zeros(bit_str_i, coeff_array_i);
@@ -860,6 +871,13 @@ uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coe
         }
         else {
             curr_coeff *= 1.0*I*sgn*pow(-1.0, nn);
+        }
+    }
+    // If not using periodic boundary conditions we zero the coefficients which arise
+    // from going over the boundary.
+    if (fixed_ends) {
+        if ((pos == 0 && nn == 1) || (pos == n_bits - 2 && nn == 0)) {
+            curr_coeff = 0.0;
         }
     }
     // Shift back to correct place.

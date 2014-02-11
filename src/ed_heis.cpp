@@ -14,10 +14,11 @@ using namespace arma;
 
 int n_si = 8;
 int n_states = (int)pow(2.0, n_si);
-double Ji = -1.0;
+double Ji = 1.0;
 mat H(n_states, n_states);
 vec e_val;
 double dee = 1e-7;
+int bound;
 
 int look_up(uint16_t *I, uint16_t state) {
 
@@ -33,13 +34,13 @@ double h_zz(uint16_t *I, uint16_t input) {
     int bit_i, bit_j;
     double sz = 0;
 
-    for (int i = 0; i < n_si; i++) {
+    for (int i = 0; i < bound; i++) {
         bit_i = (input >> i)&1;
         bit_j = (input >> (i+1)%n_si)&1;
         sz +=  Ji/4.0*pow(-1.0, bit_i + bit_j);
     }
 
-    return(0*sz);
+    return(0.0*sz);
 
 }
 
@@ -51,7 +52,7 @@ void hamiltonian(mat &H, uint16_t *I) {
     for (int i = 0; i < n_states; i++) {
         // Diagonal.
         H(i,i) = h_zz(I, I[i]);
-        for (int j = 0; j < n_si-1; j++) {
+        for (int j = 0; j < bound; j++) {
             mask = (int)(pow(2.0, j) + pow(2.0, (j+1)%n_si));
             K = I[i] & mask;
             L = K ^ mask;
@@ -132,17 +133,81 @@ double energy_noise(vector<double> input, int it, double run, double e_run) {
 
 }
 
-void diag_heis(vector<double> &eigen, uint16_t *I) {
+void transition_freq(vector<double> input, double diff[]) {
+
+    ofstream freq;
+    freq.open("frequencies_open.dat");
+
+    for (int i = 0; i < n_states; i++) {
+        diff[i] = abs(input[0] - input[i]);
+        freq << abs(input[0] - input[i]) << endl;
+    }
+
+    freq.close();
+
+}
+
+void non_zero_overlap(mat input, uint16_t *I, double diff[]) {
+
+    uint16_t mask, tmp;
+    double factor[2] = {-1.0, 1.0}, res[n_states];
+    vec mod_vec, curr_vec, v_j;
+    curr_vec = input.col(0);
+    mod_vec = curr_vec;
+    mask = 1;
+
+    // Work out sigma_0^z |Psi_0>.
+    for (int i = 0; i < n_states; i++) {
+        tmp = I[i] & mask;
+        mod_vec[i] *= factor[tmp];
+    }
+
+    ofstream trans;
+    trans.open("non_zero_open.dat");
+
+    for (int i = 0; i < n_states; i++) {
+        v_j = input.col(i);
+        res[i] = dot(v_j, mod_vec);
+        trans << i << "  " << res[i] << endl;
+    }
+
+    trans.close();
+
+    ofstream nz;
+    nz.open("non_zero_freq.dat");
+
+    for (int i = 0; i < n_states; i++) {
+        if (abs(res[i]) > dee) {
+            nz << diff[i] << endl;
+        }
+    }
+
+}
+
+
+void diag_heis(vector<double> &eigen, uint16_t *I, bool boundary_type) {
 
     states(I);
     H.zeros();
+    if (boundary_type) {
+        bound = n_si - 1;
+    }
+    else {
+        bound = n_si;
+    }
     hamiltonian(H, I);
-    //cout << HAM << endl;
+
     vec  gs;
     mat e_vec;
+    vector<double> evalues;
+    double spec_diff[n_states];
+
     eig_sym(e_val, e_vec, H);
     cout << e_val << endl;
     gs = e_vec.col(0);
     eigen = conv_to< vector<double> >::from(gs);
+    evalues = conv_to< vector<double> >::from(e_val);
+    transition_freq(evalues, spec_diff);
+    non_zero_overlap(e_vec, I, spec_diff);
 
 }

@@ -14,8 +14,12 @@ int count_bits(uint16_t inp);
 
 void states(uint16_t *I);
 
+void transition_freq(vector<double> input, double diff[]);
+
+void non_zero_overlap(mat input, uint16_t *I, double diff[]);
+
 double vec_noise(vector<double> &input, double factor);
 
 double energy_noise(vector<double> input, int it, double run, double e_run);
 
-void diag_heis(vector<double> &eigen, uint16_t *I);
+void diag_heis(vector<double> &eigen, uint16_t *I, bool boundary_type);
