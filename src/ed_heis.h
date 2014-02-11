@@ -18,8 +18,8 @@ void transition_freq(vector<double> input, double diff[]);
 
 void non_zero_overlap(mat input, uint16_t *I, double diff[]);
 
-double vec_noise(vector<double> &input, double factor);
+double vec_noise(vector<double> &input1, vector<double> &input2, double factor);
 
-double energy_noise(vector<double> input, int it, double run, double e_run);
+double energy_noise(vector<double> input1, vector<double> input2, int it, double run, double e_run, double n_run);
 
 void diag_heis(vector<double> &eigen, uint16_t *I, bool boundary_type);

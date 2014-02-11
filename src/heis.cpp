@@ -51,7 +51,7 @@ double continued_fraction(double a[], double b[], double num, double omega);
 cplxd gs_trace(vector<uint16_t> input_a, vector<uint16_t> input_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b, uint16_t *ground_state, vector<double> gs_coeff);
 // Exact Diagonalisation.
 void dos_mat(int L, double a_c[], double b_c[]);
-void dos_noise();
+void dos_noise(double factor);
 void dos_norm(int its, double omega, double step, int depth);
 void overlap_matrix(int size, mat &overlap);
 
@@ -74,10 +74,10 @@ int depth = 8;
 double a_av[12], b_av[12];
 cplxd I_c(0.0,1.0);
 double eta_g = 0.01;
-vector<double> gs_vec, tmp_vec;
+vector<double> gs_vec, tmp_vec1, tmp_vec2;
 uint16_t *configs;
 int num_states = (int)pow(2.0, n_sites);
-int N_its = 1;
+int N_its = 200;
 bool fixed_ends = false;
 
 double de = 1e-12;
@@ -98,8 +98,8 @@ int main() {
 
     configs = new uint16_t [num_states];
     diag_heis(gs_vec, configs, fixed_ends);
-    double div = 0, N0 = 0, erun = 0;
-    double dos[1024], d_av[1024],omega_c = 0.0;
+    double div = 0, N0 = 0, erun = 0, noise_factor;
+    double dos[1024], d_av[1024], omega_c = 0.0;
 
     for (int j = 0; j < depth; j++) {
         a_av[j] = 0;
@@ -114,8 +114,10 @@ int main() {
     cout << "Starting vector: " << init_basis << endl;
     cout << "Fixed end boundary conditions: " << fixed_ends << endl;
 
-    tmp_vec = gs_vec;
-    commute_wrapper(init_basis,1.0);
+    tmp_vec1 = gs_vec;
+    tmp_vec2 = gs_vec;
+    //commute_wrapper(init_basis,1.0);
+    dos_noise(noise_factor);
     //dos_norm(10024, -5.0, 0.001, depth);
 
     //int size;
@@ -305,29 +307,37 @@ void dos_norm(int its, double omega, double step, int depth) {
 
 }
 
-void dos_noise() {
+void dos_noise(double factor) {
 
-    double div, erun, omega_c, N0, dos[N_its];
+    double div, erun, omega_c, N0 = 0, dos[1024];
 
     ofstream myfile;
-    myfile.open("../mod_r_data/xx_01_mult_10000.dat");
+    myfile.open("xx_chain_replicas.dat");
 
+    for (int i = 0; i < 1024; i++) {
+        dos[i] = 0.0;
+    }
     for (int i = 0; i < N_its; i++) {
-        for (int k = 0; k < 7; k++) {
+        for (int k = 0; k < depth; k++) {
             a_av[k] = 0;
             b_av[k] = 0;
         }
-        tmp_vec = gs_vec;
-        div = vec_noise(tmp_vec, 0.01);
+        tmp_vec1 = gs_vec;
+        tmp_vec2 = gs_vec;
+        div = vec_noise(tmp_vec1, tmp_vec2, factor);
+        //cout << "div" <<"  "<< div<< endl;
         N0 += div;
-        erun = energy_noise(tmp_vec, i, div, erun);
+        erun = energy_noise(tmp_vec1, tmp_vec2, i, div, erun, N0);
+        //cout << erun << endl;
         //cout << N0 << "   " << erun << endl;
-        divide(tmp_vec, sqrt(div));
+        divide(tmp_vec1, sqrt(div));
+        divide(tmp_vec2, sqrt(div));
+        //cout << "divided" << endl;
         commute_wrapper(3, 1.0);
         omega_c = 0.0;
         for (int l = 0; l < 1024; l++) {
             omega_c += 0.005;
-            dos[l] += continued_fraction(a_av, b_av, 7, omega_c);
+            dos[l] += continued_fraction(a_av, b_av, depth, omega_c);
         }
     }
     omega_c = 0.0;
@@ -420,7 +430,7 @@ cplxd gs_trace(vector<uint16_t> input_a, vector<uint16_t> input_b, vector<cplxd>
             //cout << basis_coeff << "  " << gs_coeff[look_up_table(basis_element, ground_state)] << endl;
             //cout <<"Basis element: " <<bitset<4>(basis_element) <<endl;
             //cout << basis_coeff <<"   "<< conj(coeff_b[j])*coeff_a[i] << "   " << gs_coeff[look_up_table(basis_element, ground_state)]  <<endl;
-            trace += conj(coeff_b[j])*coeff_a[i]*basis_coeff*gs_coeff[look_up_table(basis_element, ground_state)];
+            trace += conj(coeff_b[j])*coeff_a[i]*basis_coeff*tmp_vec2[look_up_table(basis_element, ground_state)];
             //cout <<"Trace: "<< coeff_a[i] <<"  " << basis_coeff<<"  "<< look_up_table(basis_element, ground_state)<< endl;
         }
         }
@@ -458,7 +468,7 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     uint16_t onsite_bits, nn_bits;
     uint16_t new_bits, bits_sig[4];
     double lanc_a[1000], lanc_b[1000], J = 1.0, delta;
-    cplxd new_coeff, tmp_coeff, coeff_sig[4];
+    cplxd new_coeff, tmp_coeff, coeff_sig[4], check;
     vector<uint16_t> bit_str_0, bit_str_i, bit_str_old;
     vector<cplxd> coeff_array_0, coeff_array_i, coeff_array_old;
 
@@ -466,8 +476,8 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     coeff_array_0.push_back(initial_coeff);
     i = 0;
     delta = 1;
-    //lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, tmp_vec).real();
-    lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
+    lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, tmp_vec1).real();
+    //lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
     b_av[0] = lanc_b[0];
     cout << lanc_b[0];
     divide_c(coeff_array_0,sqrt(lanc_b[0]));
@@ -515,8 +525,8 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         // a_i = Tr(Lu, u)
         remove_zeros(bit_str_i, coeff_array_i);
         //print_c(coeff_array_i);
-        lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
-        //lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, tmp_vec).real();
+        //lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
+        lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, tmp_vec1).real();
         // Calculate Lu - a_i u.
         //cout << lanc_a[dep] << endl;
         merge_lists(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, -1.0*lanc_a[dep]);
@@ -524,10 +534,16 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         // Caluculate V = Lu_i - a_i u_i - b[i] u_i-1
         merge_lists(bit_str_i, bit_str_old, coeff_array_i, coeff_array_old, -1.0*lanc_b[dep]);
         // b_{i+1} = Tr(V_{i+1}, V_{i+1})
-        lanc_b[dep+1] = sqrt(inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i));
-        //lanc_b[dep+1] = sqrt(gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, tmp_vec).real());
+        //lanc_b[dep+1] = sqrt(inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i));
+        check = gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, tmp_vec1).real();
+        cout << check.real() << endl;
+        if (check.real() < 0) {
+            cout << "Inner product not positive definite." << endl;
+            break;
+        }
         //cout << lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
         //print_c(coeff_array_i);
+        lanc_b[dep+1] = sqrt(check.real());
         a_av[dep] = lanc_a[dep];
         b_av[dep+1] = lanc_b[dep+1];
         cout <<dep<< "   " <<lanc_a[dep]<< "  " <<lanc_b[dep] <<"  "<<bit_str_0.size() << endl;

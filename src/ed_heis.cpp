@@ -90,44 +90,41 @@ void states(uint16_t *I) {
     }
  }
 
-double vec_noise(vector<double> &input, double factor) {
+double vec_noise(vector<double> &input1, vector<double> &input2, double factor) {
 
     //ofstream file_r;
     //file_r.open("rand_nums.dat", ios::out | ios::app);
 
-    double r, norm = 0;
+    double r1, r2, norm = 0;
 
     for (int i = 0; i < n_states; i++) {
-        /*
-        if (abs(input[i]) > dee) {
-            r = ((double)rand()/RAND_MAX - 0.5)*factor;
-            //file_r << r << endl;
-            input[i] += r;
-            norm += input[i]*input[i];
-        }
-        */
-        r = ((double)rand()/RAND_MAX - 0.5)*factor;
+        r1 = ((double)rand()/RAND_MAX - 0.5)*factor;
+        r2 = ((double)rand()/RAND_MAX - 0.5)*factor;
         // psi = sum (1+\delta_i)*c_i |i>
-        input[i] *= (1.0+r);
-        norm += input[i]*input[i];
+        input1[i] *= (1.0+r1);
+        input2[i] *= (1.0+r2);
+        norm += input2[i]*input1[i];
     }
     return(norm);
     //file_r.close();
 
 }
 
-double energy_noise(vector<double> input, int it, double run, double e_run) {
+double energy_noise(vector<double> input1, vector<double> input2, int it, double run, double e_run, double n_run) {
 
     ofstream file;
-    file.open("../mod_r_data/rand_noise_xx_01.dat", ios::out | ios::app);
+    file.open("rand_noise_replica.dat", ios::out | ios::app);
     double e_rand, e_exact, e_av = 0;
-    vec tmp = input;
+    vec tmp1 = input1;
+    vec tmp2 = input2;
 
-    tmp = conv_to< vec >::from(input);
-    e_exact = conv_to< double >::from(tmp.t()*H*tmp);
-    e_rand = conv_to< double >::from(tmp.t()*H*tmp);
+    tmp1 = conv_to< vec >::from(input1);
+    tmp2 = conv_to< vec >::from(input2);
+
+    //e_exact = conv_to< double >::from(tmp2.t()*H*tmp1);
+    e_rand = conv_to< double >::from(tmp2.t()*H*tmp1);
     e_run += e_rand;
-    file << it << "  " << e_val(0)  << "   " << e_rand/run << "   " << e_run/run<< endl;
+    file << it << "  " << e_val(0)  << "   " << e_rand/run << "   " << e_run/n_run<< endl;
     return (e_run);
     file.close();
 
