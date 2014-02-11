@@ -51,7 +51,7 @@ void hamiltonian(mat &H, uint16_t *I) {
     for (int i = 0; i < n_states; i++) {
         // Diagonal.
         H(i,i) = h_zz(I, I[i]);
-        for (int j = 0; j < n_si; j++) {
+        for (int j = 0; j < n_si-1; j++) {
             mask = (int)(pow(2.0, j) + pow(2.0, (j+1)%n_si));
             K = I[i] & mask;
             L = K ^ mask;
@@ -141,7 +141,7 @@ void diag_heis(vector<double> &eigen, uint16_t *I) {
     vec  gs;
     mat e_vec;
     eig_sym(e_val, e_vec, H);
-    //cout << e_val << endl;
+    cout << e_val << endl;
     gs = e_vec.col(0);
     eigen = conv_to< vector<double> >::from(gs);
 
