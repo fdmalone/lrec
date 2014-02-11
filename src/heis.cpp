@@ -77,7 +77,7 @@ double eta_g = 0.01;
 vector<double> gs_vec, tmp_vec1, tmp_vec2;
 uint16_t *configs;
 int num_states = (int)pow(2.0, n_sites);
-int N_its = 200;
+int N_its = 10;
 bool fixed_ends = false;
 
 double de = 1e-12;
@@ -110,9 +110,12 @@ int main() {
         d_av[m] = 0.0;
     }
 
+    cin >> noise_factor;
     cout << "Peforming recursion method." << endl;
     cout << "Starting vector: " << init_basis << endl;
     cout << "Fixed end boundary conditions: " << fixed_ends << endl;
+    cout << "Number of iterations " << N_its << endl;
+    cout << "Randomisation factor " << noise_factor << endl;
 
     tmp_vec1 = gs_vec;
     tmp_vec2 = gs_vec;
@@ -479,9 +482,7 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, tmp_vec1).real();
     //lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
     b_av[0] = lanc_b[0];
-    cout << lanc_b[0];
     divide_c(coeff_array_0,sqrt(lanc_b[0]));
-    cout <<"THIS: "<< lanc_b[0] << endl;
 
     for (dep = 0; dep < depth; dep++) {
         max = -1;
@@ -536,9 +537,9 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         // b_{i+1} = Tr(V_{i+1}, V_{i+1})
         //lanc_b[dep+1] = sqrt(inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i));
         check = gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, tmp_vec1).real();
-        cout << check.real() << endl;
+        //cout << check.real() << endl;
         if (check.real() < 0) {
-            cout << "Inner product not positive definite." << endl;
+            //cout << "Inner product not positive definite." << endl;
             break;
         }
         //cout << lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
@@ -546,7 +547,7 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         lanc_b[dep+1] = sqrt(check.real());
         a_av[dep] = lanc_a[dep];
         b_av[dep+1] = lanc_b[dep+1];
-        cout <<dep<< "   " <<lanc_a[dep]<< "  " <<lanc_b[dep] <<"  "<<bit_str_0.size() << endl;
+        //cout <<dep<< "   " <<lanc_a[dep]<< "  " <<lanc_b[dep] <<"  "<<bit_str_0.size() << endl;
         file1 << bit_str_0.size() << endl;
         for (int iter = 0; iter < bit_str_0.size(); iter++) {
             file2 << bit_str_0[iter] << endl;
@@ -554,7 +555,7 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         }
 
         if (lanc_b[dep+1] < de) {
-            cout << "terminated" << endl;
+            // cout << "terminated" << endl;
             break;
         }
         //recursion(bit_str_old, bit_str_0, bit_str_i, coeff_array_old, coeff_array_0, coeff_array_i);
@@ -607,11 +608,8 @@ double continued_fraction(double a[], double b[], double num, double omega) {
     c0 = f0;
     d0 = 0;
 
-    //cout << eta << "   " << tiny_num << "   " << eps << "   " << d0 << endl;
-
     for (i = 0; i < num; i++) {
 
-        //cout << a[i] << "   " << b[i] << endl;
         d0 = omega - eta - a[i] - b[i]*b[i]*d0;
 
         if (abs(d0) < eps) {

@@ -200,11 +200,11 @@ void diag_heis(vector<double> &eigen, uint16_t *I, bool boundary_type) {
     double spec_diff[n_states];
 
     eig_sym(e_val, e_vec, H);
-    cout << e_val << endl;
+    //cout << e_val << endl;
     gs = e_vec.col(0);
     eigen = conv_to< vector<double> >::from(gs);
     evalues = conv_to< vector<double> >::from(e_val);
-    transition_freq(evalues, spec_diff);
-    non_zero_overlap(e_vec, I, spec_diff);
+    //transition_freq(evalues, spec_diff);
+    //non_zero_overlap(e_vec, I, spec_diff);
 
 }
