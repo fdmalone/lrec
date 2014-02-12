@@ -50,10 +50,11 @@ void remove_zeros(vector<uint16_t> &input, vector<cplxd> &coeffs);
 double continued_fraction(double a[], double b[], double num, double omega);
 cplxd gs_trace(vector<uint16_t> input_a, vector<uint16_t> input_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b, uint16_t *ground_state, vector<double> gs_coeff);
 // Exact Diagonalisation.
-void dos_mat(int L, double a_c[], double b_c[]);
+void dos_mat(int L, double a_c[], double b_c[], mat input);
 void dos_noise(double factor);
 void dos_norm(int its, double omega, double step, int depth);
 void overlap_matrix(int size, mat &overlap);
+void gram_schmidt(mat overlap);
 
 enum nearest {
     Left,
@@ -70,7 +71,7 @@ int n_sites = n_bits/2;
 int init_basis = 3;
 int n_neigh[2] = {Left, Right};
 double J[3] = {1.0, 1.0, 0.0};
-int depth = 8;
+int depth = 3;
 double a_av[12], b_av[12];
 cplxd I_c(0.0,1.0);
 double eta_g = 0.01;
@@ -119,145 +120,7 @@ int main() {
 
     tmp_vec1 = gs_vec;
     tmp_vec2 = gs_vec;
-    //commute_wrapper(init_basis,1.0);
     dos_noise(noise_factor);
-    //dos_norm(10024, -5.0, 0.001, depth);
-
-    //int size;
-    //cin >> size;
-    //vec eigv;
-    //mat overlap(size, size), eigm, lambda(size, size);
-
-
-    //lambda.zeros();
-    //eig_sym(eigv, eigm, overlap);
-    //for (int i = 0; i < size; i++) {
-      //  lambda(i,i) = eigv(i);
-    //}
-/*
-    cx_mat J(size,size), lambda_c(size, size), eig_c(size, size);
-    lambda_c.zeros();
-
-    for (int k = 0; k < size; k++) {
-        for (int j = 0; j < size; j++) {
-            //eig_c(k,j) = eigm(k,j);
-            if (j == k+1) {
-                J(k,j) = b_av[k];
-            }
-        }
-    }
-
-    J += J.t();
-
-    cout << J << endl;
-
-    for (int i = 0; i < size; i++) {
-        //lambda(i,i) = sqrt(lambda(i,i));
-        //lambda_c(i,i) = lambda(i,i);
-    }
-
-    //cout << eig_c*lambda*eig_c.i();
-    cx_mat s_pl(size, size), s_mi(size, size), omega(size, size), jinv(size, size);
-    //s_pl = eig_c*lambda_c*eig_c.i();
-
-    for (int i = 0; i < size; i++) {
-        omega(i,i) = 1.0;
-        //lambda_c(i,i) = 1.0/lambda_c(i,i);
-    }
-
-    //s_mi = eig_c*lambda_c*eig_c.i();
-
-    //cx_mat J_tilda(size, size);
-
-    //J_tilda = s_pl*J*s_pl;
-
-    //cout << J_tilda << endl;
-    vec evec;
-    evec = eig_sym(J);
-    cout << evec << endl;
-    ofstream out2;
-    out2.open("trans_dos_inf.dat");
-    double ome = -5.0;
-    cplxd ds, ds1 = 0.0, ds2 = 0.0, ds3 = 0.0;
-    for (int i = 0; i < 1000; i++) {
-        ome += 0.01;
-        jinv = (ome*omega - eta_g*I_c*omega-J).i();
-        ds = 0.0;
-        for (int j = 0; j < size; j++) {
-            ds += jinv(j,0)*overlap(j,0);
-        }
-        ds1 = jinv(0,0)*overlap(0,0);
-        ds2 = jinv(1,0)*overlap(0,1);
-        ds3 = jinv(2,0)*overlap(0,2);
-        out2 << ome << "  " << 1.0*ds1.imag() << "  " << ds2.imag() << "   " << ds3.imag() << "  " << ds.imag() << endl;
-    }
-    out2.close();
-
-    //mat tmp(lengths.size(), lengths.size());
-
-    //for (int i = 0; i < lengths.size(); i++) {
-    //    for (int j = 0; j < lengths.size(); j++) {
-    //        tmp(i,j) = overlap(i,j)/sqrt(overlap(i,i)*overlap(j,j));
-    //    }
-    //}
-    //overlap = tmp;
-    //cout << overlap << endl;
-    //cout << svd(overlap) << endl;
-    //cout << overlap.i() << endl;
-    out.close();
-
-    /*
-    int L = 7;
-    cplxd norm = 0;
-    cx_mat S(L,L), J(L,L), omega(L, L), jtmp(L, L), jinv(L,L), gram(L,L), g_tmp(L,L);
-    vec v_tmp;
-    gram.zeros();
-    g_tmp.eye();
-    cplxd norm_i[10];
-
-    int step = 0;
-    for (int i = 0; i < L; i++) {
-        norm = 0.0;
-        gram(i,i) = 1.0;
-        for (int m = 0; m < L; m++) {
-            for (int n = 0; n < L; n++) {
-                if (i > 0) {
-                    norm_i[step] += gram(m,i-1)*gram(n,i-1)*overlap(m,n);
-                }
-                else {
-                    norm_i[step] = 1.0;
-                }
-            }
-        }
-        norm_i[step] = sqrt(norm_i[step]);
-        cout <<"norm: " <<step<<"  "<<norm_i[step] << endl;
-        step++;
-
-        for (int j = 0; j < i; j++) {
-            for (int k = 0; k < i; k++) {
-                for (int l = 0; l < L; l++) {
-                    gram(j,i) -= gram(l,k)*overlap(i,l)*gram(j,k)/norm_i[k+1];
-                    //cout << gram(j,i) << "  " << l << "   " << k << "   " << i << "   " << j << endl;
-                }
-            }
-        }
-
-    }
-    norm = 0.0;
-    for (int l = 0; l < L; l++) {
-        for (int i = 0; i < L; i++) {
-            for (int j = 0; j < L; j++) {
-                norm += gram(i,l)*gram(j,l)*overlap(i,j);
-                //cout << norm <<"   "<< i << "  " << j <<"   "<<gram(i,2) <<"  "<<gram(j,2)<<"  "<<overlap(i,j)<< endl;
-            }
-        }
-        for (int m = 0; m < L; m++) {
-            gram(m,l) = gram(m,l)/sqrt(norm);
-        }
-    }
-    cout << norm << endl;
-    cout << gram << endl;
-    */
 
 }
 
@@ -270,9 +133,6 @@ void overlap_matrix(int size, mat &overlap) {
 
     shift_a = 0;
     shift_b = 0;
-
-    ofstream input;
-    input.open("overlap_matrix.dat");
 
     read_output(lengths, bas_el, bas_coeff);
 
@@ -288,8 +148,6 @@ void overlap_matrix(int size, mat &overlap) {
         shift_a += lengths[i];
         shift_b = 0;
     }
-
-    input.close();
 
 }
 
@@ -352,10 +210,11 @@ void dos_noise(double factor) {
     myfile.close();
 }
 
-void dos_mat(int L, double a_c[], double b_c[]) {
+void dos_mat(int L, double a_c[], double b_c[], mat input) {
 
     cx_mat J(L,L), omega(L, L), jinv(L,L);
     double ome = -5.0;
+    cplxd ds;
 
     for (int i = 0; i < L; i++) {
         for (int j = 0; j < L; j++) {
@@ -368,16 +227,63 @@ void dos_mat(int L, double a_c[], double b_c[]) {
         }
     }
 
-    ofstream dos;
-    dos.open("trans_dos_inf.dat");
-    for (int i = 0; i < 1000; i++) {
+    ofstream out;
+    out.open("dos_overlap.dat");
+    for (int i = 0; i < 1024; i++) {
         ome += 0.01;
         jinv = inv(ome*omega - eta_g*I_c*omega-J);
-        dos << ome << "  " << 1.0*jinv(0,0).imag() << endl;
+        ds = 0.0;
+        for (int j = 0; j < L; j++) {
+            ds += jinv(j,0)*input(0,j);
+        }
+        out << ome << "  " << ds.imag() << endl;
     }
-    dos.close();
+    out.close();
 
 }
+
+// Transforming bases is not a good idea.
+void gram_schmidt(mat overlap) {
+
+    int L = 7;
+    cplxd norm = 0;
+    cx_mat S(L,L), J(L,L), omega(L, L), jtmp(L, L), jinv(L,L), gram(L,L), g_tmp(L,L);
+    vec v_tmp;
+    gram.zeros();
+    g_tmp.eye();
+    cplxd norm_i[10];
+
+    int step = 0;
+    for (int i = 0; i < L; i++) {
+        norm = 0.0;
+        gram(i,i) = 1.0;
+        for (int m = 0; m < L; m++) {
+            for (int n = 0; n < L; n++) {
+                if (i > 0) {
+                    norm_i[step] += gram(m,i-1)*gram(n,i-1)*overlap(m,n);
+                }
+                else {
+                    norm_i[step] = 1.0;
+                }
+            }
+        }
+        norm_i[step] = sqrt(norm_i[step]);
+        cout <<"norm: " <<step<<"  "<<norm_i[step] << endl;
+        step++;
+
+        for (int j = 0; j < i; j++) {
+            for (int k = 0; k < i; k++) {
+                for (int l = 0; l < L; l++) {
+                    gram(j,i) -= gram(l,k)*overlap(i,l)*gram(j,k)/norm_i[k+1];
+                    //cout << gram(j,i) << "  " << l << "   " << k << "   " << i << "   " << j << endl;
+                }
+            }
+        }
+
+    }
+
+}
+
 
 int boundary(int pos, int nn) {
     if (nn == Left) {
@@ -539,7 +445,6 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         check = gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, tmp_vec1).real();
         //cout << check.real() << endl;
         if (check.real() < 0) {
-            //cout << "Inner product not positive definite." << endl;
             break;
         }
         //cout << lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
