@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <bitset>
 #include <cmath>
 #include <vector>
@@ -8,6 +9,7 @@
 #include <armadillo>
 #include "read_vec.h"
 #include "ed_heis.h"
+#include "const.h"
 
 using namespace std;
 using namespace arma;
@@ -50,11 +52,15 @@ void remove_zeros(vector<uint16_t> &input, vector<cplxd> &coeffs);
 double continued_fraction(double a[], double b[], double num, double omega);
 cplxd gs_trace(vector<uint16_t> input_a, vector<uint16_t> input_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b, uint16_t *ground_state, vector<double> gs_coeff);
 // Exact Diagonalisation.
-void dos_mat(int L, double a_c[], double b_c[], mat input);
+void dos_mat(int L, double a_c[], double b_c[], mat input, double it, int step);
 void dos_noise(double factor);
 void dos_norm(int its, double omega, double step, int depth);
 void overlap_matrix(int size, mat &overlap);
 void gram_schmidt(mat overlap);
+
+void print_row(int size, mat input);
+
+void input_output(double &noise);
 
 enum nearest {
     Left,
@@ -65,23 +71,19 @@ enum nearest {
 uint16_t bit_mask = 0XF, on_site_mask = 3, nn_mask = 0XC;
 uint16_t bit_cycle[2] = {1, 2};
 
-// System Globals;
-int n_bits = 16;
-int n_sites = n_bits/2;
-int init_basis = 3;
-int n_neigh[2] = {Left, Right};
-double J[3] = {1.0, 1.0, 0.0};
-int depth = 3;
-double a_av[12], b_av[12];
+int depth = 16;
+double a_av[1000], b_av[1000];
 cplxd I_c(0.0,1.0);
-double eta_g = 0.01;
+double eta_g = 0.0005;
 vector<double> gs_vec, tmp_vec1, tmp_vec2;
 uint16_t *configs;
 int num_states = (int)pow(2.0, n_sites);
-int N_its = 5000;
-bool fixed_ends = false;
+int N_its = 1000;
+int n_neigh[2] = {Left, Right};
+int n_bits = 16;
+int init_basis = 3;
+bool pos_def;
 
-double de = 1e-12;
 // fin_trace constants
 
 // xor_array:
@@ -98,9 +100,13 @@ cplxd spin_coeff[4][2] = {{1.0,1.0},{1.0,1.0},{-I_c,I_c},{-1.0,1.0}};
 int main() {
 
     configs = new uint16_t [num_states];
-    diag_heis(gs_vec, configs, fixed_ends);
+    diag_heis(gs_vec, configs);
     double div = 0, N0 = 0, erun = 0, noise_factor;
+    double *mom_av;
     double dos[1024], d_av[1024], omega_c = 0.0;
+    input_output(noise_factor);
+    mom_av = new double [n_moments];
+    mat ovlp(depth, depth);
 
     for (int j = 0; j < depth; j++) {
         a_av[j] = 0;
@@ -110,17 +116,78 @@ int main() {
         dos[m] = 0.0;
         d_av[m] = 0.0;
     }
+    //cout << "Non-zero: " << count_non_zero(gs_vec) << endl;
+    tmp_vec1 = gs_vec;
+    tmp_vec2 = gs_vec;
+    //dos_noise(noise_factor);
+    commute_wrapper(init_basis, 1.0);
+    //cout << "overlap" << endl;
+    //overlap_matrix(depth, ovlp);
+    //print_row(depth, ovlp);
+    //div = vec_noise(tmp_vec1, tmp_vec2, 0.05);
+    //divide(tmp_vec1, sqrt(div));
+    //dos_norm(dos_its, -5.0, 0.0001, depth);
+    //calc_moments(16);
+    for (int i = 0; i < N_its; i++) {
+        // Generate noisy vectors.
+        div = vec_noise(tmp_vec1, tmp_vec2, noise_factor);
+        // Normalise.
+        divide(tmp_vec1, sqrt(div));
+        // Overlap matrix.
+        overlap_matrix(depth, ovlp);
+        // Density of states.
+        dos_mat(depth, a_av, b_av, ovlp, 0.0001, dos_its);
+        // Get moments.
+        calc_moments(n_moments, mom_av);
+    }
+    ofstream file;
+    file.open("averaged_moments.dat");
+    for (int i = 0; i < n_moments; i++) {
+        file << i << "  " << mom_av[i]/N_its << endl;
+    }
+    file.close();
 
-    cin >> noise_factor;
+
+    //overlap_matrix(depth, ovlp);
+    //for (int i = 0; i < depth; i++) {
+    //    cout << i << "   " << ovlp(0,i) << endl;
+    //}
+    //print_row(depth, ovlp);
+    //dos_mat(depth, a_av, b_av, ovlp, 0.0001, dos_its);
+    //calc_moments(n_moments);
+    /*for (int i = 0; i < depth; i++) {
+        for (int j = 0; j < depth; j++) {
+            cout << ovlp(i,j) << " &  ";
+        }
+        cout << "\\\\" ;
+        cout << endl;
+    }
+    */
+    //cout << ovlp << endl;
+}
+
+void print_row(int size, mat input) {
+
+    for (int i = 0; i < size; i++) {
+        cout << i << "  " << input(0, i) << endl;
+    }
+
+}
+
+void input_output(double &noise) {
+
+    cin >> noise;
     cout << "Peforming recursion method." << endl;
     cout << "Starting vector: " << init_basis << endl;
     cout << "Fixed end boundary conditions: " << fixed_ends << endl;
+    cout << "Number of sites: " << n_sites << endl;
+    cout << "Values of J_x, J_y, J_z: " << J[0] << "   " << J[1] << "   " << J[2] << endl;
+    cout << "Number of states: " << n_states << endl;
     cout << "Number of iterations " << N_its << endl;
-    cout << "Randomisation factor " << noise_factor << endl;
-
-    tmp_vec1 = gs_vec;
-    tmp_vec2 = gs_vec;
-    dos_noise(noise_factor);
+    cout << "Randomisation factor " << noise << endl;
+    cout << "Recursion depth " << depth << endl;
+    cout << "Number of moments calculate: " << n_moments << endl;
+    cout << endl;
 
 }
 
@@ -136,7 +203,7 @@ void overlap_matrix(int size, mat &overlap) {
 
     read_output(lengths, bas_el, bas_coeff);
 
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < 1; i++) {
         tmp_el_a.assign(bas_el.begin()+shift_a, bas_el.begin()+lengths[i]+shift_a);
         tmp_coeff_a.assign(bas_coeff.begin()+shift_a, bas_coeff.begin()+lengths[i]+shift_a);
         for (int j = 0; j < size; j++) {
@@ -148,7 +215,6 @@ void overlap_matrix(int size, mat &overlap) {
         shift_a += lengths[i];
         shift_b = 0;
     }
-
 }
 
 void dos_norm(int its, double omega, double step, int depth) {
@@ -156,12 +222,12 @@ void dos_norm(int its, double omega, double step, int depth) {
     double dos;
 
     ofstream file;
-    file.open("dos_open_act2.dat");
+    file.open("dos_open_t0.dat");
 
     for (int i = 0; i < its; i++) {
         omega += step;
         dos = continued_fraction(a_av, b_av, depth, omega);
-        file << omega << "   " << dos << endl;
+        file << setprecision(16) << omega << "   " << dos << endl;
     }
 
     file.close();
@@ -171,9 +237,15 @@ void dos_norm(int its, double omega, double step, int depth) {
 void dos_noise(double factor) {
 
     double div, erun, omega_c, N0 = 0, dos[1024];
-
+    vector<double> av1(num_states), av2(num_states);
+    mat corr1(num_states, num_states), corr2(num_states, num_states), corr_prod(num_states, num_states), diff(num_states, num_states);
+    corr1.zeros();
+    corr2.zeros();
+    corr_prod.zeros();
+    diff.zeros();
+    for (int i = 0; i < num_states; i++) { av1[i] = 0; av2[i] = 0;}
     ofstream myfile;
-    myfile.open("xx_chain_replicas.dat");
+    myfile.open("xx_chain_replica.dat");
 
     for (int i = 0; i < 1024; i++) {
         dos[i] = 0.0;
@@ -191,16 +263,34 @@ void dos_noise(double factor) {
         erun = energy_noise(tmp_vec1, tmp_vec2, i, div, erun, N0);
         //cout << erun << endl;
         //cout << N0 << "   " << erun << endl;
+        //correlation(tmp_vec1, tmp_vec2, av1, av2, corr1, corr2);
         divide(tmp_vec1, sqrt(div));
-        divide(tmp_vec2, sqrt(div));
         //cout << "divided" << endl;
-        commute_wrapper(3, 1.0);
-        omega_c = 0.0;
+        commute_wrapper(init_basis, 1.0);
+        omega_c = -5.0;
+        if (pos_def) {
+            cout << "negative!" << endl;
         for (int l = 0; l < 1024; l++) {
             omega_c += 0.005;
             dos[l] += continued_fraction(a_av, b_av, depth, omega_c);
         }
+        break;
+        }
     }
+    cout << "Mean Enegy: " << erun/N0 << endl;
+    /*
+    for (int i = 0; i < num_states; i++) {
+        for (int j = 0; j < num_states; j++) {
+            corr_prod(i,j) = av2[i]*av1[j]/N_its*N_its;
+        }
+    }
+    diff = 1.0/N_its*corr1 - corr_prod;
+    cout <<"Without replicas: " <<  norm(diff, 2) << endl;
+    diff.zeros();
+    diff = 1.0/N_its*corr2 - corr_prod;
+    cout << "With replicas: " << norm(diff, 2) << endl;
+    */
+
     omega_c = 0.0;
     for (int j = 0; j < 1024; j++) {
         omega_c += 0.005;
@@ -210,33 +300,34 @@ void dos_noise(double factor) {
     myfile.close();
 }
 
-void dos_mat(int L, double a_c[], double b_c[], mat input) {
+void dos_mat(int L, double a_c[], double b_c[], mat input, double it, int steps) {
 
     cx_mat J(L,L), omega(L, L), jinv(L,L);
-    double ome = -5.0;
+    double ome = -4.0;
     cplxd ds;
 
     for (int i = 0; i < L; i++) {
         for (int j = 0; j < L; j++) {
-            if (i == j) {
-                J(i,j) =  a_c[i];
-            }
-            if (j == i+1 ) {
-                J(i,j) = b_c[i];
+            if (j == i+1) {
+                J(i,j) = b_c[i+1];
             }
         }
     }
-
+    J += J.t();
+    for (int i = 0; i < L; i++) {
+        J(i,i) = a_c[i];
+        omega(i,i) = 1.0;
+    }
     ofstream out;
-    out.open("dos_overlap.dat");
-    for (int i = 0; i < 1024; i++) {
-        ome += 0.01;
+    out.open("dos_overlap_open.dat");
+    for (int i = 0; i < steps; i++) {
+        ome += it;
         jinv = inv(ome*omega - eta_g*I_c*omega-J);
         ds = 0.0;
-        for (int j = 0; j < L; j++) {
+        for (int j = 0; j < depth; j++) {
             ds += jinv(j,0)*input(0,j);
         }
-        out << ome << "  " << ds.imag() << endl;
+        out << setprecision(16) << ome << "  " << ds.imag() << endl;
     }
     out.close();
 
@@ -284,16 +375,6 @@ void gram_schmidt(mat overlap) {
 
 }
 
-
-int boundary(int pos, int nn) {
-    if (nn == Left) {
-        return((pos+2)%n_bits);
-    }
-    else {
-        return((pos-2+n_bits)%n_bits);
-    }
-}
-
 cplxd gs_trace(vector<uint16_t> input_a, vector<uint16_t> input_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b, uint16_t *ground_state, vector<double> gs_coeff) {
 
     int i, j, k;
@@ -302,7 +383,6 @@ cplxd gs_trace(vector<uint16_t> input_a, vector<uint16_t> input_b, vector<cplxd>
     cplxd trace = 0;
     double sgn;
     cplxd reduced_coeff, basis_coeff;
-
     // Loop over Pauli matrices in product state.
     for (int iter = 0; iter < num_states; iter++) {
     for (i = 0; i < input_a.size(); i++) {
@@ -312,6 +392,7 @@ cplxd gs_trace(vector<uint16_t> input_a, vector<uint16_t> input_b, vector<cplxd>
             //cout << iter << endl;
             basis_coeff = gs_coeff[iter];
             //cout << bitset<16>(input_a[i]) << "   " << bitset<16>(input_b[j]) <<"  "<< bitset<4>(basis_element) << endl;
+            //cout << i << "  " << j << endl;
             if (abs(basis_coeff) > de) {
             for (k = 0; k < n_sites; k++) {
                 // Find if spin up or down at site k.
@@ -377,7 +458,7 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     uint16_t onsite_bits, nn_bits;
     uint16_t new_bits, bits_sig[4];
     double lanc_a[1000], lanc_b[1000], J = 1.0, delta;
-    cplxd new_coeff, tmp_coeff, coeff_sig[4], check;
+    cplxd new_coeff, tmp_coeff, coeff_sig[4], check = 0;
     vector<uint16_t> bit_str_0, bit_str_i, bit_str_old;
     vector<cplxd> coeff_array_0, coeff_array_i, coeff_array_old;
 
@@ -385,9 +466,10 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     coeff_array_0.push_back(initial_coeff);
     i = 0;
     delta = 1;
-    lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, tmp_vec1).real();
-    //lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
+    //lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, tmp_vec1).real();
+    lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
     b_av[0] = lanc_b[0];
+    //cout << b_av[0] << endl;
     divide_c(coeff_array_0,sqrt(lanc_b[0]));
 
     for (dep = 0; dep < depth; dep++) {
@@ -432,8 +514,8 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         // a_i = Tr(Lu, u)
         remove_zeros(bit_str_i, coeff_array_i);
         //print_c(coeff_array_i);
-        //lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
-        lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, tmp_vec1).real();
+        lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
+        //lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, tmp_vec1).real();
         // Calculate Lu - a_i u.
         //cout << lanc_a[dep] << endl;
         merge_lists(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, -1.0*lanc_a[dep]);
@@ -441,26 +523,26 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         // Caluculate V = Lu_i - a_i u_i - b[i] u_i-1
         merge_lists(bit_str_i, bit_str_old, coeff_array_i, coeff_array_old, -1.0*lanc_b[dep]);
         // b_{i+1} = Tr(V_{i+1}, V_{i+1})
-        //lanc_b[dep+1] = sqrt(inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i));
-        check = gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, tmp_vec1).real();
-        //cout << check.real() << endl;
+        check = inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i);
+        //check = gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, tmp_vec1).real();
+        cout <<dep << "   " <<lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
+        a_av[dep] = lanc_a[dep];
         if (check.real() < 0) {
+            pos_def = true;
+            cout << "imag" << endl;
             break;
         }
-        //cout << lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
         //print_c(coeff_array_i);
         lanc_b[dep+1] = sqrt(check.real());
-        a_av[dep] = lanc_a[dep];
         b_av[dep+1] = lanc_b[dep+1];
-        //cout <<dep<< "   " <<lanc_a[dep]<< "  " <<lanc_b[dep] <<"  "<<bit_str_0.size() << endl;
         file1 << bit_str_0.size() << endl;
         for (int iter = 0; iter < bit_str_0.size(); iter++) {
             file2 << bit_str_0[iter] << endl;
-            file3 << coeff_array_0[iter] << endl;
+            file3 << setprecision(16) << coeff_array_0[iter] << endl;
         }
 
-        if (lanc_b[dep+1] < de) {
-            // cout << "terminated" << endl;
+        if (abs(lanc_b[dep+1]) < de) {
+            cout << "terminated" << endl;
             break;
         }
         //recursion(bit_str_old, bit_str_0, bit_str_i, coeff_array_old, coeff_array_0, coeff_array_i);
@@ -488,7 +570,7 @@ void remove_zeros(vector<uint16_t> &input, vector<cplxd> &coeffs) {
     int start = 0;
 
     do {
-        if (abs(coeffs[start]) < 1e-6) {
+        if (abs(coeffs[start]) < 1e-14) {
             coeffs.erase(coeffs.begin() + start);
             input.erase(input.begin() + start);
             start = start;
@@ -506,7 +588,7 @@ double continued_fraction(double a[], double b[], double num, double omega) {
     double eps;
     cplxd eta, f0, c0, d0, delta, tiny_num;
 
-    eta = 0.005*I_c;
+    eta = I_c*eta_g;
     tiny_num = 1e-30;
     eps = 1e-15;
     f0 = tiny_num;
@@ -537,6 +619,15 @@ double continued_fraction(double a[], double b[], double num, double omega) {
 
 }
 
+int boundary(int pos, int nn) {
+    if (nn == Left) {
+        return((pos+2)%n_bits);
+    }
+    else {
+        return((pos-2+n_bits)%n_bits);
+    }
+}
+
 void print(vector<uint16_t> input) {
     for (int i = 0; i < input.size(); i++) {
         cout << i << "  " << bitset<16>(input[i]) << endl;
@@ -544,7 +635,7 @@ void print(vector<uint16_t> input) {
 }
 void print_c(vector<cplxd> input) {
     for (int i = 0; i < input.size(); i++) {
-        cout << i << "  " << input[i] << endl;
+        cout << i << "  "<< setprecision(16) << input[i] << endl;
     }
 }
 

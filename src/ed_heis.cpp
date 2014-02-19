@@ -2,22 +2,19 @@
 #include <vector>
 #include <algorithm>
 #include <complex>
+#include <iomanip>
 #include <stdint.h>
 #include <fstream>
 #include <bitset>
 #include <armadillo>
-
+#include "const.h"
 
 // Checked relative to Hande ED. Factor of 4 difference in eigenvalues.
 using namespace std;
 using namespace arma;
 
-int n_si = 8;
-int n_states = (int)pow(2.0, n_si);
-double Ji = 1.0;
 mat H(n_states, n_states);
 vec e_val;
-double dee = 1e-7;
 int bound;
 
 int look_up(uint16_t *I, uint16_t state) {
@@ -35,12 +32,12 @@ double h_zz(uint16_t *I, uint16_t input) {
     double sz = 0;
 
     for (int i = 0; i < bound; i++) {
-        bit_i = (input >> i)&1;
-        bit_j = (input >> (i+1)%n_si)&1;
-        sz +=  Ji/4.0*pow(-1.0, bit_i + bit_j);
+        bit_i = (input >> i) & 1;
+        bit_j = (input >> (i + 1) % n_sites) & 1;
+        sz +=  pow(-1.0, bit_i + bit_j);
     }
 
-    return(0.0*sz);
+    return (0.25*J[2]*sz);
 
 }
 
@@ -53,17 +50,18 @@ void hamiltonian(mat &H, uint16_t *I) {
         // Diagonal.
         H(i,i) = h_zz(I, I[i]);
         for (int j = 0; j < bound; j++) {
-            mask = (int)(pow(2.0, j) + pow(2.0, (j+1)%n_si));
+            mask = (int)(pow(2.0, j) + pow(2.0, (j+1)%n_sites));
             K = I[i] & mask;
             L = K ^ mask;
             L = I[i] - K + L;
             if (K != 0 && K != mask) {
-                H(look_up(I,L), i) += Ji/2.0;
+                H(look_up(I,L), i) += J[1]/2.0;
             }
         }
 
     }
 }
+
 int count_bits(uint16_t inp) {
 
     int i;
@@ -76,11 +74,33 @@ int count_bits(uint16_t inp) {
 
 }
 
+int calc_ms(vec input, uint16_t *I) {
+
+    int count1 = 0, count2 = 0;
+
+    for (int i = 0; i < input.size(); i++) {
+        if (abs(input[i]) > de) {
+            count1++;
+            if (count_bits(I[i]) == n_sites/2) {
+                count2++;
+            }
+        }
+    }
+
+    if (count1 == count2) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+
+}
+
 void states(uint16_t *I) {
 
     int r = 0;
 
-    for (int n_up = 0; n_up <= n_si; n_up++) {
+    for (int n_up = 0; n_up <= n_sites; n_up++) {
         for (int i = 0; i < n_states; i++) {
             if (count_bits(i) == n_up) {
                 I[r] = i;
@@ -94,7 +114,6 @@ double vec_noise(vector<double> &input1, vector<double> &input2, double factor) 
 
     //ofstream file_r;
     //file_r.open("rand_nums.dat", ios::out | ios::app);
-    double av_prod, prod_av, av_prod_rep, prod_av_rep;
 
     double r1, r2, norm = 0;
 
@@ -102,12 +121,25 @@ double vec_noise(vector<double> &input1, vector<double> &input2, double factor) 
         r1 = ((double)rand()/RAND_MAX - 0.5)*factor;
         r2 = ((double)rand()/RAND_MAX - 0.5)*factor;
         // psi = sum (1+\delta_i)*c_i |i>
-        input1[i] *= (1.0+r1);
-        input2[i] *= (1.0+r2);
+        input1[i] *= (1.0 + r1);
+        input2[i] *= (1.0 + r2);
         norm += input2[i]*input1[i];
     }
     return(norm);
     //file_r.close();
+
+}
+
+void correlation(vector<double> input1, vector<double> input2, vector<double> &av1, vector<double> &av2, mat &corr1, mat &corr2) {
+
+    for (int i = 0; i < input1.size(); i++) {
+        av1[i] += input1[i];
+        av2[i] += input2[i];
+        for (int j = 0; j < input1.size(); j++) {
+            corr1(i,j) += input1[i]*input1[j];
+            corr2(i,j) += input2[i]*input1[j];
+        }
+    }
 
 }
 
@@ -125,7 +157,7 @@ double energy_noise(vector<double> input1, vector<double> input2, int it, double
     //e_exact = conv_to< double >::from(tmp2.t()*H*tmp1);
     e_rand = conv_to< double >::from(tmp2.t()*H*tmp1);
     e_run += e_rand;
-    file << it << "  " << e_val(0)  << "   " << e_rand/run << "   " << e_run/n_run<< endl;
+    file << it << "  " << e_val(0)  << "   " << e_rand/run << "   " << n_run << endl;
     return (e_run);
     file.close();
 
@@ -145,67 +177,219 @@ void transition_freq(vector<double> input, double diff[]) {
 
 }
 
-void non_zero_overlap(mat input, uint16_t *I, double diff[]) {
+int count_non_zero(vec input) {
+
+    int count = 0;
+
+    for (int i = 0; i < input.size(); i++) {
+        if (abs(input[i]) > de) {
+            count++;
+        }
+    }
+
+    return(count);
+
+}
+
+void non_zero_overlap(mat input, uint16_t *I, double diff[], double mag[]) {
 
     uint16_t mask, tmp;
-    double factor[2] = {-1.0, 1.0}, res[n_states];
+    double factor[2] = {-1.0, 1.0}, res[n_states], norm = 0;
     vec mod_vec, curr_vec, v_j;
     curr_vec = input.col(0);
     mod_vec = curr_vec;
     mask = 1;
 
     // Work out sigma_0^z |Psi_0>.
-    for (int i = 0; i < n_states; i++) {
-        tmp = I[i] & mask;
-        mod_vec[i] *= factor[tmp];
-    }
+    //for (int i = 0; i < n_states; i++) {
+    //    tmp = I[i] & mask;
+    //    mod_vec[i] *= factor[tmp];
+    //}
 
-    ofstream trans;
+    ofstream trans, ms;
     trans.open("non_zero_open.dat");
+    ms.open("ms_0.dat");
 
     for (int i = 0; i < n_states; i++) {
         v_j = input.col(i);
-        res[i] = dot(v_j, mod_vec);
-        trans << i << "  " << res[i] << endl;
+        mod_vec = v_j;
+        for (int j = 0; j < n_states; j++) {
+            tmp = I[j] & mask;
+            mod_vec[j] *= factor[tmp];
+        }
+        res[i] = dot(curr_vec, mod_vec);
+        if (calc_ms(v_j, I) == 1) {
+            ms << i << "   " << 1 << "   " << count_non_zero(v_j) << "   " << dot(v_j, mod_vec) << endl;
+        }
+
+        trans << i << "  " << res[i]*res[i] << endl;
+        mag[i] = res[i]*res[i];
     }
+    for (int i = 0; i < n_states; i++) {
+        norm += res[i]*res[i];
+    }
+    //cout << "norm " <<"  " << norm << endl;
 
     trans.close();
+    ms.close();
 
     ofstream nz;
     nz.open("non_zero_freq.dat");
 
     for (int i = 0; i < n_states; i++) {
-        if (abs(res[i]) > dee) {
-            nz << diff[i] << endl;
+        if (abs(res[i]) > de) {
+            nz <<diff[i] << endl;
         }
     }
 
 }
 
+void non_zero_all(mat input, uint16_t *I, vec evec, double mag[]) {
 
-void diag_heis(vector<double> &eigen, uint16_t *I, bool boundary_type) {
+    int it = 0;
+    uint16_t mask, tmp;
+    double factor[2] = {-1.0, 1.0}, norm = 0;
+    double res[n_states*n_states], prod;
+    vec mod_vec, curr_vec, v_j;
+    mod_vec = curr_vec;
+    mask = 1;
+
+    ofstream file;
+    file.open("non_zero_freq_all_prod.dat");
+
+    for (int i = 0; i < n_states; i++) {
+        mod_vec = input.col(i);
+        for (int j = 0; j < n_states; j++) {
+            tmp = I[j] & mask;
+            mod_vec[j] *= factor[tmp];
+        }
+        for (int k = 0; k < n_states; k++) {
+            prod = dot(input.col(k), mod_vec);
+            prod *= prod;
+            if (abs(prod) > 10*de) {
+                file << evec[i] - evec[k] << "   "  << prod<< endl;
+                it++;
+            }
+        }
+    }
+
+    cout << "non-zero: " << it << endl;
+
+    file.close();
+}
+
+void exact_moments(double trans[], double mag[], int n) {
+
+    // Calculate \mu^n = int_{-\infty}^{\infty} \omega^n A(\omega).
+    // Uses exact values for A(\omega).
+
+    double mu_n;
+
+    ofstream file;
+    file.open("exact_moments.dat");
+
+    for (int i = 0; i < n; i++) {
+        mu_n = 0.0;
+        for (int j = 0; j < n_states; j++) {
+            mu_n += pow(trans[j], i)*mag[j];
+        }
+        file << i << "   " << mu_n << endl;
+    }
+
+    file.close();
+
+}
+
+void calc_moments(int n, double *mav) {
+
+    int it = 0;
+    vector < vector<double> > dos(dos_its+1, vector<double> (2,0));
+    double mu_n = 0, mu_0 = 0;
+    vector<double> sub_sec(10), maxima, freq;
+    ifstream inp;
+    double a, b, slope1, slope2;
+    inp.open("dos_overlap_open.dat");
+
+    if (inp.is_open()) cout << "opened " << "   " << dos_its << endl;
+    while (!inp.eof()) {
+        inp >> a >> b;
+        dos[it][0] = a;
+        dos[it][1] = b;
+        it++;
+    }
+    inp.close();
+    // cout << it << endl;
+
+    ofstream out;
+
+    for (int i = 1; i < dos_its; i++) {
+        slope1 = dos[i][1] - dos[i-1][1];
+        slope2 = dos[i+1][1] - dos[i][1];
+        if (slope1 > 0 && slope2 < 0  || (slope1 < 0 && slope2 > 0 )) {
+            maxima.push_back(dos[i][1]);
+            freq.push_back(dos[i][0]);
+        }
+    }
+
+    for (int i = 0; i < maxima.size(); i++) {
+        mu_0 += maxima[i];
+        cout << "freq: " << freq[i] << endl;
+    }
+    for (int i = 0; i < maxima.size(); i++) {
+        maxima[i] = maxima[i]/mu_0;
+    }
+
+    out.open("calc_moments.dat");
+
+    for (int j = 0; j < n; j++) {
+        mu_n = 0;
+        for (int k = 0; k < maxima.size(); k++) {
+             mu_n += pow(freq[k], j)*maxima[k];
+        }
+        mav[j] += mu_n;
+        out << j << "  " << mu_n << endl;
+    }
+
+    out.close();
+
+}
+
+void diag_heis(vector<double> &eigen, uint16_t *I) {
 
     states(I);
+    int count = 0;
+    for (int i = 0; i < n_states; i++) {
+        //if ((I[i] & 1) == 1) {
+            //cout << i << "   " << bitset<8>(I[i]) << endl;
+            //count++;
+        //}
+    }
+    //cout << count << endl;
     H.zeros();
-    if (boundary_type) {
-        bound = n_si - 1;
+    if (fixed_ends) {
+        bound = n_sites - 1;
     }
     else {
-        bound = n_si;
+        bound = n_sites;
     }
     hamiltonian(H, I);
 
     vec  gs;
     mat e_vec;
     vector<double> evalues;
-    double spec_diff[n_states];
+    double spec_diff[n_states], spec_amp[n_states];
 
     eig_sym(e_val, e_vec, H);
-    //cout << e_val << endl;
+    cout <<"Ground state energy: " << e_val(0) << endl;
     gs = e_vec.col(0);
+    //cout << e_vec.col(255) << endl;
+    //cout << e_vec.col(21) << endl;
+    //cout << gs << endl;
     eigen = conv_to< vector<double> >::from(gs);
     evalues = conv_to< vector<double> >::from(e_val);
-    //transition_freq(evalues, spec_diff);
-    //non_zero_overlap(e_vec, I, spec_diff);
+    transition_freq(evalues, spec_diff);
+    non_zero_overlap(e_vec, I, spec_diff, spec_amp);
+    non_zero_all(e_vec, I, e_val, spec_amp);
+    exact_moments(spec_diff, spec_amp, n_moments);
 
 }
