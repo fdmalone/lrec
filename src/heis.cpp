@@ -84,8 +84,6 @@ int n_bits = 16;
 int init_basis = 3;
 bool pos_def;
 
-// fin_trace constants
-
 // xor_array:
 // arranged: {I, sx, sy, sz}
 // sx and sy flip bits.
@@ -101,69 +99,7 @@ int main() {
 
     configs = new uint16_t [num_states];
     diag_heis(gs_vec, configs);
-    double div = 0, N0 = 0, erun = 0, noise_factor;
-    double *mom_av;
-    double dos[1024], d_av[1024], omega_c = 0.0;
     input_output(noise_factor);
-    mom_av = new double [n_moments];
-    mat ovlp(depth, depth);
-
-    for (int j = 0; j < depth; j++) {
-        a_av[j] = 0;
-        b_av[j] = 0;
-    }
-    for (int m = 0; m < 1024; m++) {
-        dos[m] = 0.0;
-        d_av[m] = 0.0;
-    }
-    //cout << "Non-zero: " << count_non_zero(gs_vec) << endl;
-    tmp_vec1 = gs_vec;
-    tmp_vec2 = gs_vec;
-    //dos_noise(noise_factor);
-    commute_wrapper(init_basis, 1.0);
-    //cout << "overlap" << endl;
-    //overlap_matrix(depth, ovlp);
-    //print_row(depth, ovlp);
-    //div = vec_noise(tmp_vec1, tmp_vec2, 0.05);
-    //divide(tmp_vec1, sqrt(div));
-    //dos_norm(dos_its, -5.0, 0.0001, depth);
-    //calc_moments(16);
-    for (int i = 0; i < N_its; i++) {
-        // Generate noisy vectors.
-        div = vec_noise(tmp_vec1, tmp_vec2, noise_factor);
-        // Normalise.
-        divide(tmp_vec1, sqrt(div));
-        // Overlap matrix.
-        overlap_matrix(depth, ovlp);
-        // Density of states.
-        dos_mat(depth, a_av, b_av, ovlp, 0.0001, dos_its);
-        // Get moments.
-        calc_moments(n_moments, mom_av);
-    }
-    ofstream file;
-    file.open("averaged_moments.dat");
-    for (int i = 0; i < n_moments; i++) {
-        file << i << "  " << mom_av[i]/N_its << endl;
-    }
-    file.close();
-
-
-    //overlap_matrix(depth, ovlp);
-    //for (int i = 0; i < depth; i++) {
-    //    cout << i << "   " << ovlp(0,i) << endl;
-    //}
-    //print_row(depth, ovlp);
-    //dos_mat(depth, a_av, b_av, ovlp, 0.0001, dos_its);
-    //calc_moments(n_moments);
-    /*for (int i = 0; i < depth; i++) {
-        for (int j = 0; j < depth; j++) {
-            cout << ovlp(i,j) << " &  ";
-        }
-        cout << "\\\\" ;
-        cout << endl;
-    }
-    */
-    //cout << ovlp << endl;
 }
 
 void print_row(int size, mat input) {
@@ -258,14 +194,8 @@ void dos_noise(double factor) {
         tmp_vec1 = gs_vec;
         tmp_vec2 = gs_vec;
         div = vec_noise(tmp_vec1, tmp_vec2, factor);
-        //cout << "div" <<"  "<< div<< endl;
         N0 += div;
-        erun = energy_noise(tmp_vec1, tmp_vec2, i, div, erun, N0);
-        //cout << erun << endl;
-        //cout << N0 << "   " << erun << endl;
-        //correlation(tmp_vec1, tmp_vec2, av1, av2, corr1, corr2);
-        divide(tmp_vec1, sqrt(div));
-        //cout << "divided" << endl;
+         divide(tmp_vec1, sqrt(div));
         commute_wrapper(init_basis, 1.0);
         omega_c = -5.0;
         if (pos_def) {
@@ -278,18 +208,6 @@ void dos_noise(double factor) {
         }
     }
     cout << "Mean Enegy: " << erun/N0 << endl;
-    /*
-    for (int i = 0; i < num_states; i++) {
-        for (int j = 0; j < num_states; j++) {
-            corr_prod(i,j) = av2[i]*av1[j]/N_its*N_its;
-        }
-    }
-    diff = 1.0/N_its*corr1 - corr_prod;
-    cout <<"Without replicas: " <<  norm(diff, 2) << endl;
-    diff.zeros();
-    diff = 1.0/N_its*corr2 - corr_prod;
-    cout << "With replicas: " << norm(diff, 2) << endl;
-    */
 
     omega_c = 0.0;
     for (int j = 0; j < 1024; j++) {
@@ -388,45 +306,29 @@ cplxd gs_trace(vector<uint16_t> input_a, vector<uint16_t> input_b, vector<cplxd>
     for (i = 0; i < input_a.size(); i++) {
     for (j = 0; j < input_b.size(); j++) {
             basis_element = ground_state[iter];
-            //cout <<"initial: " << bitset<16>(basis_element) << endl;
-            //cout << iter << endl;
             basis_coeff = gs_coeff[iter];
-            //cout << bitset<16>(input_a[i]) << "   " << bitset<16>(input_b[j]) <<"  "<< bitset<4>(basis_element) << endl;
-            //cout << i << "  " << j << endl;
             if (abs(basis_coeff) > de) {
             for (k = 0; k < n_sites; k++) {
                 // Find if spin up or down at site k.
-                bit = (basis_element >> k)&1;
-                //cout << bit << endl;
+                bit = (basis_element >> k) & 1;
                 // Operate on basis element on site k with Pauli matrix.
                 onsite_sigma_a = (input_a[i] >> 2*k) & on_site_mask;
                 onsite_sigma_b = (input_b[j] >> 2*k) & on_site_mask;
                 onsite_sigma = permute_norm(onsite_sigma_b, onsite_sigma_a, sgn);
-                //cout <<"onsite_sigma: "<< (int)onsite_sigma_a <<"   "<<(int)onsite_sigma_b <<"  "<< (int)onsite_sigma <<"  "<<basis_coeff<<"  "<<trace<< endl;
-                //cout << bitset<16>(onsite_sigma_a) <<"   "<< bitset<16>(onsite_sigma_b) << "   " << bitset<16>(onsite_sigma) <<"   " <<basis_element << endl;
                 basis_element ^= (xor_array[onsite_sigma] << k);
-                //cout << bitset<16>(basis_element) <<"   " << coeff_b[j] <<"   "<< reduced_coeff<< "   "<< xor_array[onsite_sigma] << basis_element <<endl;
                 // Work out coefficient = a_i*
-                //cout << bitset<16>(basis_element) <<"   "<< sgn << "  "<< spin_coeff[onsite_sigma][bit]<< endl;
                 if (onsite_sigma_a != 0 && onsite_sigma_b != 0 && onsite_sigma != 0) {
                     basis_coeff *= I_c*sgn*spin_coeff[onsite_sigma][bit];
                 }
                 else {
                     basis_coeff *= sgn*spin_coeff[onsite_sigma][bit];
                 }
-                //cout <<"basis_coeff: "<< basis_coeff << endl;
             }
-            //cout << i << "  " << j <<"  " <<iter << "   " << trace <<"   "<< coeff_a[i] <<"  "<< coeff_b[j] << endl;
-            //cout << basis_coeff << "  " << gs_coeff[look_up_table(basis_element, ground_state)] << endl;
-            //cout <<"Basis element: " <<bitset<4>(basis_element) <<endl;
-            //cout << basis_coeff <<"   "<< conj(coeff_b[j])*coeff_a[i] << "   " << gs_coeff[look_up_table(basis_element, ground_state)]  <<endl;
             trace += conj(coeff_b[j])*coeff_a[i]*basis_coeff*tmp_vec2[look_up_table(basis_element, ground_state)];
-            //cout <<"Trace: "<< coeff_a[i] <<"  " << basis_coeff<<"  "<< look_up_table(basis_element, ground_state)<< endl;
         }
         }
     }
     }
-    //cout << trace.real() << "  "  << trace.imag() << endl;
     if (abs(trace) < de) {
         return(0.0);
     }
@@ -448,7 +350,6 @@ int look_up_table(uint16_t input, uint16_t arr[]) {
 void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
 
     ofstream file1, file2, file3;
-    //file.open("../T0_data/rand_coeffs.dat", ios::out | ios::app);
     file1.open("basis_lengths.dat");
     file2.open("basis_elements.dat");
     file3.open("basis_coeffs.dat");
@@ -466,10 +367,8 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     coeff_array_0.push_back(initial_coeff);
     i = 0;
     delta = 1;
-    //lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, tmp_vec1).real();
     lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
     b_av[0] = lanc_b[0];
-    //cout << b_av[0] << endl;
     divide_c(coeff_array_0,sqrt(lanc_b[0]));
 
     for (dep = 0; dep < depth; dep++) {
@@ -488,13 +387,11 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
                     tmp_coeff = coeff_array_0[bits];
                     for (nn = 0; nn < 2; nn++) {
                         nn_bits = ((bit_str_0[bits] >> boundary(pos, nn)) & on_site_mask);
-                        //cout << "    " << boundary(pos, nn) <<"  "<< pos << "  " << nn << endl;
                         // Perform commutation of input sigma matrix with the two other types.
                         for (sig = 0; sig < 2; sig++) {
                             // Find result of [H,sigma].
                             new_bits = comm_bits(onsite_bits, nn_bits, tmp_coeff, sig, pos, nn);
                             new_bits = merge_bits(new_bits, bit_str_0[bits], pos, nn);
-                            //cout << "finished commutation:" << "   " << bits <<"   "<< pos <<endl;
                             bits_sig[i] = new_bits;
                             coeff_sig[i] = tmp_coeff;
                             tmp_coeff = coeff_array_0[bits];
@@ -508,18 +405,12 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
                 }
             }
         }
-        //print(bit_str_0);
-        //cout << endl;
-        //print(bit_str_i);
         // a_i = Tr(Lu, u)
         remove_zeros(bit_str_i, coeff_array_i);
-        //print_c(coeff_array_i);
         lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
         //lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, tmp_vec1).real();
         // Calculate Lu - a_i u.
-        //cout << lanc_a[dep] << endl;
         merge_lists(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, -1.0*lanc_a[dep]);
-        //print_c(coeff_array_i);
         // Caluculate V = Lu_i - a_i u_i - b[i] u_i-1
         merge_lists(bit_str_i, bit_str_old, coeff_array_i, coeff_array_old, -1.0*lanc_b[dep]);
         // b_{i+1} = Tr(V_{i+1}, V_{i+1})
@@ -529,10 +420,9 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
         a_av[dep] = lanc_a[dep];
         if (check.real() < 0) {
             pos_def = true;
-            cout << "imag" << endl;
+            // cout << "imag" << endl;
             break;
         }
-        //print_c(coeff_array_i);
         lanc_b[dep+1] = sqrt(check.real());
         b_av[dep+1] = lanc_b[dep+1];
         file1 << bit_str_0.size() << endl;
@@ -540,18 +430,14 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
             file2 << bit_str_0[iter] << endl;
             file3 << setprecision(16) << coeff_array_0[iter] << endl;
         }
-
         if (abs(lanc_b[dep+1]) < de) {
             cout << "terminated" << endl;
             break;
         }
-        //recursion(bit_str_old, bit_str_0, bit_str_i, coeff_array_old, coeff_array_0, coeff_array_i);
         divide_c(coeff_array_i, lanc_b[dep+1]);
         remove_zeros(bit_str_i, coeff_array_i);
-        //cout <<bit_str_old.size()<<"  " << bit_str_0.size() << "  " << bit_str_i.size() <<"  "<<bit_str_i.capacity() << endl;
         bit_str_old = bit_str_0;
         bit_str_0 = bit_str_i;
-        //cout << bit_str_0.size() << "  " << bit_str_i.size() << bit_str_i[0] << "  " <<bit_str_0[0]<< endl;
         coeff_array_old = coeff_array_0;
         coeff_array_0 = coeff_array_i;
         bit_str_i.resize(0);
@@ -561,8 +447,6 @@ void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
     file1.close();
     file2.close();
     file3.close();
-
-
 }
 
 void remove_zeros(vector<uint16_t> &input, vector<cplxd> &coeffs) {
@@ -583,6 +467,8 @@ void remove_zeros(vector<uint16_t> &input, vector<cplxd> &coeffs) {
 }
 
 double continued_fraction(double a[], double b[], double num, double omega) {
+
+    // Lenz's algorithm from numerical recipes.
 
     int i;
     double eps;
@@ -654,11 +540,20 @@ void divide_c(vector<cplxd> &input, double divisor) {
 
 double inf_trace(vector<uint16_t> bit_str_a, vector<uint16_t> bit_str_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b) {
 
+    // Infinite temperature inner product.
+    // For Heisenberg model Tr(sigma_i^{\alpha}sigma_j^{\beta}) = \delta_{i,j}\delta^{\alpha,\beta}.
+    // So we only need do (c_i*)(c_i)
+
+    // In:
+    //   bit_strings: lists of bit strings we multiply together.
+    //   coeff_: coefficients of bit strings.
+    // Out:
+    //   trace: infinite temperature trace.
+
     int i, j;
     cplxd trace;
 
     for (i = 0; i < bit_str_a.size(); i++) {
-        //cout << coeff_b[i] << endl;
         for (j =0 ; j < bit_str_b.size(); j++) {
             if (bit_str_a[i] == bit_str_b[j]) {
                 trace += conj(coeff_a[i])*coeff_b[j];
@@ -670,13 +565,23 @@ double inf_trace(vector<uint16_t> bit_str_a, vector<uint16_t> bit_str_b, vector<
 
 void merge_lists(vector<uint16_t> &bit_str_new, vector<uint16_t> bit_str_old, vector<cplxd> &coeff_new, vector<cplxd> coeff_old, double mult_a) {
 
+    // Merge two sorted lists. Makes use of binary searching, very similar to annihlation in HANDE.
+
+    // In/Out:
+    //   bit_str_new: List we merge into.
+    //   bit_str_old: list we merge from.
+    //   coeff_new: coefficients of basis elements in new list.
+    //   coeff_old: coefficients of old elements.
+    // In:
+    //   mult_a: prefactor for adding two lists. See recursion.
+
     int new_min, res, pos;
 
     new_min = 0;
 
     for (int i = 0; i < bit_str_old.size(); i++) {
         res = binary_search(bit_str_new, new_min, bit_str_new.size()-1, bit_str_old[i], pos);
-        //cout << mult_a << "  " << res <<"  " <<pos<< coeff_new[pos] << endl;
+        // Elements is in the list.
         if (res == 1) {
             coeff_new[pos] += mult_a*coeff_old[i];
         }
@@ -684,6 +589,8 @@ void merge_lists(vector<uint16_t> &bit_str_new, vector<uint16_t> bit_str_old, ve
             bit_str_new.insert(bit_str_new.begin() + pos, bit_str_old[i]);
             coeff_new.insert(coeff_new.begin() + pos, mult_a*coeff_old[i]);
         }
+        // Since both lists are sorted we know the next element to insert is greater than the previous one.
+        // So we can do binary search on a shrinking list.
         new_min = pos;
     }
 }
@@ -693,38 +600,46 @@ void add_new_bit_str(uint16_t bits[], cplxd coeffs[], uint16_t rank[], int lengt
     // If bit string is already present in list add coefficients else need to insert new bit string in appropriate position in list.
     int i;
     int res, pos;
-    //cout << bit_str_mod.size() << endl;
     for (i = 0; i < length; i++) {
         // There is probably a way around this.
+        // I think there is an issue with sorting of lists of size 0 so need to
+        // explicitly insert the first few elements.
         if (max < 1) {
             bit_str_mod.push_back(bits[rank[i]]);
             coeff_mod.push_back(coeffs[rank[i]]);
         }
         else {
-            //cout << bit_str_mod.size() << endl;
             res = binary_search(bit_str_mod, 0, bit_str_mod.size()-1, bits[rank[i]], pos);
-            //cout << pos << "    "<< res <<"   "<<bits[rank[i]] << "     " << bit_str_mod[pos] << endl;
+            // Basis element is already in list.
             if (res == 1) {
                 coeff_mod[pos] += coeffs[rank[i]];
             }
+            // List is sorted so this should go in pos found from binary search.
+            // Insert takes care of all the moving about.
             else {
                 bit_str_mod.insert(bit_str_mod.begin() + pos, bits[rank[i]]);
                 coeff_mod.insert(coeff_mod.begin() + pos, coeffs[rank[i]]);
-                //insert_element(bit_str_mod, pos, res, max, bits[rank[i]]);
-                //insert_element_cplxd(coeff_mod, pos, res, max, coeffs[rank[i]]);
-                //max = max + 1;
             }
         }
-        //for (int j = 0; j < bit_str_mod.size(); j++) {
-        //    cout << j << "   " <<bit_str_mod[j] << endl;
-        //}
-        //cout << endl;
         max = max + 1;
-        //cout <<"this: " << bits[rank[i]] << "  " <<bit_str_mod[i] <<"  "<< bit_str_mod.size()<< endl;
     }
 }
 
 int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos) {
+
+    // Search for position in sorted list for elements.
+    // If it's not in the list then we find the best place to put it. Source: HANDE.
+
+    // In/Out:
+    //    a: array containing our list.
+    // In:
+    //    min: where we sort from.
+    //    max: where we sort to.
+    //    val: value we want to insert into the list.
+    //    pos: position in array where we want to insort val.
+    // Out:
+    //    return value: 0 if element is no in the list.
+    //                  1 if element is in the list.
 
     int mid, lo, hi, safe = 0;
 
@@ -769,14 +684,14 @@ int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos)
         }
     }
 }
-
+// reduntant.
 void insert_element(vector<uint16_t> &a, int pos, int res, int max, uint16_t val) {
 
     int i, k;
 
     a.insert(a.begin() + pos, val);
 }
-
+// Might need these when moving to different arrays.
 void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val) {
 
     int i, k;
@@ -788,8 +703,17 @@ void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val
     a[pos] = val;
 
 }
-
+// Sorting / utils
+// should be void.
 int insertion_rank(uint16_t array[], uint16_t rank[], int length) {
+
+    // Rank an array in increasing order result is rank which contains indices or ranked array elements.
+
+    // In:
+    //   array: array of unsigned ints to be sorted i.e. the basis vectors.
+    //   length: length of array, slightly redundant potentially.
+    // Out:
+    //    rank: array containing indices of ranked array.
 
     int i, j, tmp;
 
@@ -810,20 +734,37 @@ int insertion_rank(uint16_t array[], uint16_t rank[], int length) {
 
 uint16_t merge_bits(uint16_t mod_bits, uint16_t inp_bit_str, int pos, int nn) {
 
+    // Merge bits which are the results of [H, local_bits] back into original string.
+
+    // In/out:
+    //      mod_bits: bits we want to merge back into the original string.
+    // In:
+    //      inp_bit_str: original bit string.
+    //      pos: the position in bit string of the active operator i.e. the one we commuted H with.
+    //      nn: nearest neighbour is either on the left or the right of the active operator.
+
     if (nn == Left) {
+        // Shift bits back to their position, they might need moving around boundaries.
         mod_bits = rotl(mod_bits, pos);
+        // Merge back into input bit string.
         mod_bits |= (inp_bit_str & ~rotl(bit_mask, pos));
     }
     else {
+        // The right nearest neighbour is slightly more complicated for various reasons.
+        // I can't remember why this is the correct shift of the bits and amn't thinking
+        // about it now. I remember this taking a bit of time.
         mod_bits = rotr(swap_bits(mod_bits), (n_bits-pos+2)%n_bits);
         mod_bits |= (inp_bit_str & ~rotr(bit_mask, (n_bits-pos+2)%n_bits));
     }
-    //cout << "mod_bits:  " << bitset<16>(mod_bits) << endl;
     return(mod_bits);
 
 }
 
 uint16_t swap_bits(uint16_t b) {
+
+    // Bit twidling hacks: xor swap.
+    // Due to how the commutation is organised we sometime need to swap bits in the mod_bits string.
+
     unsigned int i = 0, j = 2; // positions of bit sequences to swap
     unsigned int n = 2;    // number of consecutive bits in each sequence
     uint16_t r;    // bit-swapped result goes here
@@ -834,14 +775,39 @@ uint16_t swap_bits(uint16_t b) {
 }
 
 uint16_t rotl(uint16_t x, int n) {
+
+    // Left circular shift. Source: Stack exchange probably.
+
+    // In:
+    //    x: integer we want to shift.
+    //    n: how much we want to shift.
+
           return ((x << n) | (x >> (n_bits - n)));
 }
 
 uint16_t rotr(uint16_t x, int n) {
+
+    // Right circular shift.
+
+    // In:
+    //    x: integer we want to shift.
+    //    n: how much we want to shift.
+
           return ((x >> n) | (x << (n_bits - n)));
 }
 
 uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coeff, int iter, int pos, int nn) {
+
+    // Commute active bits with the Hamiltonian. This is slightly subtle for a number of reasons.
+
+    // In:
+    //   onsite_bit_str: active bit rep of operator we want to commute with Hamiltonian.
+    //   nn_bit_str: nearest neighbour of onsite_bit_str.
+    //   iter: Commute with one of the pauli matrices sort of defined through this index.
+    //   pos: position of something
+    //   nn: Either Left of Right nearest neighbour.
+    // In/Out:
+    //   curr_coeff: current prefactor in front of our basis element.
 
     int i;
     double sgn;
@@ -849,15 +815,16 @@ uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coe
     cplxd I(0.0,1.0), onsite_coeff;
 
     // Perform commutation.
+    // This isn't necessarily deterministic.
+    // The bit_cycle mask has two entries. This NAND operation cycles through
+    // the possible outcomes of [H, \sigma_{\alpha}. We then later find out what
+    // the particular sigma matrix was by knowing the input and output matrix.
     onsite_tmp = ~(onsite_bit_str & bit_cycle[iter]);
     onsite_tmp &= on_site_mask;
-    //cout << "onsite_tmp: onsite_tmp " << bitset<16> (onsite_bit_str)<< endl;
     // Work out resulting coefficient.
     // = J_nn/4 * 2 * I * epsilon_{nn,onsite,res}
     sigma_nn = permute(onsite_bit_str, onsite_tmp, sgn);
-    //cout << sigma_nn <<"   "<<bitset<32>(onsite_bit_str)<<"   "<< J[sigma_nn] << endl;
     curr_coeff *= 0.25*2*I*sgn*J[sigma_nn-1];
-    //cout << "onsite_tmp: comm_res " << bitset<16> (sigma_nn)<< endl;
     // Deal with nearest neighbour pauli matrix reduction.
     // Three possibilites:
     // 1. Identity on nearest neighbour.
@@ -867,6 +834,7 @@ uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coe
     // sigma^r sigma^c = i epsilon^{rcs} sigma^s
     // Here find sigma^r sigma^c and as tmp_nn while finding contribution to
     // overall coefficient at the same time.
+    // It matters if the neighbour is on our left or right.
     if (nn_bit_str == 0) {
        tmp_nn = sigma_nn;
     }
@@ -875,7 +843,12 @@ uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coe
         tmp_nn = 0;
     }
     else {
+        // Reduce the product of nearest neighbour pauli matrices.
         tmp_nn = permute_norm(nn_bit_str, sigma_nn, sgn);
+        // This is annoying. While we have periodic boundary conditions on our lattice
+        // the same doesn't hold for our string of pauli operators. So when moving the operator
+        // back so it can be reduced we don't loop circularly around the end. This is very important.
+        // Deserves a better explanation.
         if ((pos == 0 && nn == 1) || (pos == n_bits - 2 && nn == 0)) {
             curr_coeff *= -1.0*I*sgn*pow(-1.0, nn);
         }
@@ -894,7 +867,6 @@ uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coe
     tmp_nn <<= 2;
     // Merge with nearest neighbour.
     onsite_tmp |= tmp_nn;
-    //cout << "onsite_tmp: " <<bitset<16>(onsite_bit_str)<<"   "<<bitset<16>(nn_bit_str)<<"  " <<bitset<16> (onsite_tmp) <<"  " <<curr_coeff<< endl;
 
     return(onsite_tmp);
 }
@@ -921,6 +893,16 @@ int permute(int a, int b, double &sign) {
 
 int permute_norm(int a, int b, double &sign) {
 
+    // Work out what matrix we commuted with and also the resulting sign.
+    // Technically also reduce nearest neighbour matrices. Not good practice two outputs.
+    // Should reduce.
+
+    // In:
+    //   a: Matrix we input into the commutator.
+    //   b: matrix we get out.
+    // In/out:
+    //   sign: The sign of from permutation.
+
     int epsilon[3], res;
 
     if (a == 0) {
@@ -936,22 +918,29 @@ int permute_norm(int a, int b, double &sign) {
         return(0);
     }
     else {
+        // Find out what the other matrix is, probably a clever way of doing this.
         epsilon[0] = a;
         epsilon[1] = b;
-
         for (int i = 1; i < 4; i++) {
             if((i != a) && (i !=b )) {
                 epsilon[2] = i;
                 res = i;
             }
         }
-
         sign = pow(-1.0, insertion_sort(epsilon, 3));
         return(res);
     }
 }
 
 int insertion_sort(int array[], int length) {
+
+    // Sort array of integers. Used for working out permutation.
+
+    // In:
+    //   array: array of integers we want to sort.
+    //   length: length of array.
+    // Out:
+    //   counter: even/odd for given permutations.
 
     int i, j, tmp, counter=0;
 
