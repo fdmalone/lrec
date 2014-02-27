@@ -11,23 +11,10 @@
 #include "ed_heis.h"
 #include "const.h"
 #include "bit_utils.h"
+#include "sorting.h"
 
 using namespace std;
 using namespace arma;
-
-// Sorting;
-int permute(int a, int b, double &sign);
-int permute_norm(int a, int b, double &sign);
-int insertion_sort(int array[], int lenght);
-int insertion_rank(uint16_t array[], uint16_t rank[], int length);
-int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos);
-void insert_element(vector<uint16_t> &a, int pos, int res, int max, uint16_t val);
-void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val);
-double inf_trace(vector<uint16_t> bit_str_a, vector<uint16_t> bit_str_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b);
-void merge_lists(vector<uint16_t> &bit_str_new, vector<uint16_t> bit_str_old, vector<cplxd> &coeff_new, vector<cplxd> coeff_old, double mult_a);
-void divide(vector<double> &input, double divisor);
-void divide_c(vector<cplxd> &input, double divisor);
-int look_up_table(uint16_t input, uint16_t arr[]);
 
 // Commutation/recursion.
 uint16_t merge_bits(uint16_t mod_bits, uint16_t input_bit_str, int pos, int nn);
@@ -39,6 +26,12 @@ void add_new_bit_str(uint16_t bits[], cplxd coeffs[], uint16_t rank[], int lengt
 void print(vector<uint16_t> input);
 void print_c(vector<cplxd> input);
 void remove_zeros(vector<uint16_t> &input, vector<cplxd> &coeffs);
+void insert_element(vector<uint16_t> &a, int pos, int res, int max, uint16_t val);
+void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val);
+void divide(vector<double> &input, double divisor);
+void divide_c(vector<cplxd> &input, double divisor);
+double inf_trace(vector<uint16_t> bit_str_a, vector<uint16_t> bit_str_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b);
+void merge_lists(vector<uint16_t> &bit_str_new, vector<uint16_t> bit_str_old, vector<cplxd> &coeff_new, vector<cplxd> coeff_old, double mult_a);
 
 // Recursion.
 double continued_fraction(double a[], double b[], double num, double omega);
@@ -71,12 +64,12 @@ double eta_g = 0.0005;
 vector<double> gs_vec, tmp_vec1, tmp_vec2;
 uint16_t *configs;
 double noise_factor;
-int num_states = (int)pow(2.0, n_sites);
 int N_its = 1000;
 int n_neigh[2] = {Left, Right};
 int init_basis = 3;
 bool pos_def;
 int n_bits = 16;
+int n_states = (int)pow(2.0, n_sites);
 
 // xor_array:
 // arranged: {I, sx, sy, sz}
@@ -91,9 +84,11 @@ cplxd spin_coeff[4][2] = {{1.0,1.0},{1.0,1.0},{-I_c,I_c},{-1.0,1.0}};
 
 int main() {
 
-    configs = new uint16_t [num_states];
+    configs = new uint16_t [n_states];
     diag_heis(gs_vec, configs);
     input_output(noise_factor);
+    commute_wrapper(init_basis, 1.0);
+    dos_norm(dos_its, -5.0, 0.0001, depth);
 }
 
 void print_row(int size, mat input) {
@@ -167,13 +162,13 @@ void dos_norm(int its, double omega, double step, int depth) {
 void dos_noise(double factor) {
 
     double div, erun, omega_c, N0 = 0, dos[1024];
-    vector<double> av1(num_states), av2(num_states);
-    mat corr1(num_states, num_states), corr2(num_states, num_states), corr_prod(num_states, num_states), diff(num_states, num_states);
+    vector<double> av1(n_states), av2(n_states);
+    mat corr1(n_states, n_states), corr2(n_states, n_states), corr_prod(n_states, n_states), diff(n_states, n_states);
     corr1.zeros();
     corr2.zeros();
     corr_prod.zeros();
     diff.zeros();
-    for (int i = 0; i < num_states; i++) { av1[i] = 0; av2[i] = 0;}
+    for (int i = 0; i < n_states; i++) { av1[i] = 0; av2[i] = 0;}
     ofstream myfile;
     myfile.open("xx_chain_replica.dat");
 
@@ -296,7 +291,7 @@ cplxd gs_trace(vector<uint16_t> input_a, vector<uint16_t> input_b, vector<cplxd>
     double sgn;
     cplxd reduced_coeff, basis_coeff;
     // Loop over Pauli matrices in product state.
-    for (int iter = 0; iter < num_states; iter++) {
+    for (int iter = 0; iter < n_states; iter++) {
     for (i = 0; i < input_a.size(); i++) {
     for (j = 0; j < input_b.size(); j++) {
             basis_element = ground_state[iter];
@@ -331,15 +326,6 @@ cplxd gs_trace(vector<uint16_t> input_a, vector<uint16_t> input_b, vector<cplxd>
     }
 }
 
-int look_up_table(uint16_t input, uint16_t arr[]) {
-
-    for (int i = 0; i < num_states; i++) {
-        if (arr[i] == input) {
-            return(i);
-        }
-    }
-
-}
 
 void commute_wrapper(uint16_t initial_bit_str, cplxd initial_coeff) {
 
@@ -619,113 +605,6 @@ void add_new_bit_str(uint16_t bits[], cplxd coeffs[], uint16_t rank[], int lengt
     }
 }
 
-int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos) {
-
-    // Search for position in sorted list for elements.
-    // If it's not in the list then we find the best place to put it. Source: HANDE.
-
-    // In/Out:
-    //    a: array containing our list.
-    // In:
-    //    min: where we sort from.
-    //    max: where we sort to.
-    //    val: value we want to insert into the list.
-    //    pos: position in array where we want to insort val.
-    // Out:
-    //    return value: 0 if element is no in the list.
-    //                  1 if element is in the list.
-
-    int mid, lo, hi, safe = 0;
-
-    if (val > a[max]) {
-        // C indexing.
-        pos = max + 1;
-        return 0;
-
-    }
-    else {
-
-        lo = min;
-        hi = max;
-
-        do {
-            pos = lo + ((hi-lo)/2);
-            if (a[pos] == val) {
-                return 1;
-                break;
-            }
-            else if (a[pos] < val) {
-                lo = pos + 1;
-            }
-            else {
-                hi = pos;
-            }
-        } while (hi != lo);
-
-        if (hi == lo) {
-            if (a[hi] == val) {
-                pos = hi;
-                return 1;
-            }
-            else if (a[hi] < val) {
-                pos = hi + 1;
-                return 0;
-            }
-            else {
-                pos = hi;
-                return 0;
-            }
-        }
-    }
-}
-// reduntant.
-void insert_element(vector<uint16_t> &a, int pos, int res, int max, uint16_t val) {
-
-    int i, k;
-
-    a.insert(a.begin() + pos, val);
-}
-// Might need these when moving to different arrays.
-void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val) {
-
-    int i, k;
-
-    for (i = max; i >= pos; i--) {
-        k = i + 1;
-        a[k] = a[i];
-    }
-    a[pos] = val;
-
-}
-// Sorting / utils
-// should be void.
-int insertion_rank(uint16_t array[], uint16_t rank[], int length) {
-
-    // Rank an array in increasing order result is rank which contains indices or ranked array elements.
-
-    // In:
-    //   array: array of unsigned ints to be sorted i.e. the basis vectors.
-    //   length: length of array, slightly redundant potentially.
-    // Out:
-    //    rank: array containing indices of ranked array.
-
-    int i, j, tmp;
-
-    for (i = 0; i < length; i++) {
-        rank[i] = i;
-    }
-    for (i = 1; i < length; i++) {
-        j = i - 1;
-        tmp = rank[i];
-        do {
-            if ((int)(array[rank[j]] - array[tmp]) < 0) break;
-            rank[j+1] = rank[j];
-            j--;
-        } while (j >= 0);
-        rank[j+1] = tmp;
-    }
-}
-
 uint16_t merge_bits(uint16_t mod_bits, uint16_t inp_bit_str, int pos, int nn) {
 
     // Merge bits which are the results of [H, local_bits] back into original string.
@@ -828,90 +707,22 @@ uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coe
 
     return(onsite_tmp);
 }
+// reduntant.
+void insert_element(vector<uint16_t> &a, int pos, int res, int max, uint16_t val) {
 
+    int i, k;
 
-int permute(int a, int b, double &sign) {
-
-    int epsilon[3], res;
-    int i;
-
-    epsilon[1] = a;
-    epsilon[2] = b;
-
-    for (i = 1; i < 4; i++) {
-        if ((i != a) && (i != b)) {
-            epsilon[0] = i;
-            res = i;
-        }
-    }
-
-    sign = pow(-1.0,insertion_sort(epsilon, 3));
-    return (res);
+    a.insert(a.begin() + pos, val);
 }
+// Might need these when moving to different arrays.
+void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val) {
 
-int permute_norm(int a, int b, double &sign) {
+    int i, k;
 
-    // Work out what matrix we commuted with and also the resulting sign.
-    // Technically also reduce nearest neighbour matrices. Not good practice two outputs.
-    // Should reduce.
-
-    // In:
-    //   a: Matrix we input into the commutator.
-    //   b: matrix we get out.
-    // In/out:
-    //   sign: The sign of from permutation.
-
-    int epsilon[3], res;
-
-    if (a == 0) {
-        sign = 1.0;
-        return(b);
+    for (i = max; i >= pos; i--) {
+        k = i + 1;
+        a[k] = a[i];
     }
-    else if (b == 0) {
-        sign = 1.0;
-        return(a);
-    }
-    else if (a == b) {
-        sign = 1.0;
-        return(0);
-    }
-    else {
-        // Find out what the other matrix is, probably a clever way of doing this.
-        epsilon[0] = a;
-        epsilon[1] = b;
-        for (int i = 1; i < 4; i++) {
-            if((i != a) && (i !=b )) {
-                epsilon[2] = i;
-                res = i;
-            }
-        }
-        sign = pow(-1.0, insertion_sort(epsilon, 3));
-        return(res);
-    }
-}
+    a[pos] = val;
 
-int insertion_sort(int array[], int length) {
-
-    // Sort array of integers. Used for working out permutation.
-
-    // In:
-    //   array: array of integers we want to sort.
-    //   length: length of array.
-    // Out:
-    //   counter: even/odd for given permutations.
-
-    int i, j, tmp, counter=0;
-
-    for (i = 1; i<length; i++) {
-        j = i;
-        while (j > 0 && array[j-1] > array[j]) {
-            tmp = array[j];
-            array[j] = array[j-1];
-            array[j-1] = tmp;
-            j--;
-            counter++;
-        }
-    }
-
-    return(counter);
 }

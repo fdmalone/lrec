@@ -14,7 +14,7 @@
 using namespace std;
 using namespace arma;
 
-mat H(n_states, n_states);
+mat H;
 vec e_val;
 int bound;
 
@@ -346,15 +346,8 @@ void calc_moments(int n, double *mav) {
 void diag_heis(vector<double> &eigen, uint16_t *I) {
 
     states(I);
-    int count = 0;
-    for (int i = 0; i < n_states; i++) {
-        //if ((I[i] & 1) == 1) {
-            //cout << i << "   " << bitset<8>(I[i]) << endl;
-            //count++;
-        //}
-    }
-    //cout << count << endl;
-    H.zeros();
+    H.zeros(n_states, n_states);
+
     if (fixed_ends) {
         bound = n_sites - 1;
     }
