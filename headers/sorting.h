@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 #include <vector>
+
+using namespace std;
+
 // Sorting;
 int permute(int a, int b, double &sign);
 int permute_norm(int a, int b, double &sign);

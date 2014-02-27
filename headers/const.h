@@ -15,6 +15,10 @@ const int n_moments = 16;
 const int max_time = 1000;
 const double time_step = 0.01;
 typedef std::complex<double> cplxd;
+const cplxd I_c(0.0,1.0);
 extern int n_bits;
+extern int depth;
+extern int init_basis;
+const cplxd initial_coeff = 1.0;
 
 #endif /* CONST_H */
