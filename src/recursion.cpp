@@ -350,7 +350,7 @@ void commute_wrapper(vector<double> ground_state, uint16_t *configs, double cf_a
     i = 0;
     delta = 1;
     lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
-    cf_a[0] = lanc_b[0];
+    cf_b[0] = lanc_b[0];
     divide_c(coeff_array_0,sqrt(lanc_b[0]));
 
     for (dep = 0; dep < depth; dep++) {
