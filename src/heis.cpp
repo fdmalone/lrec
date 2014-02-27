@@ -22,8 +22,6 @@ void print_row(int size, mat input);
 void input_output(double &noise);
 
 int depth = 16;
-vector<double> gs_vec, tmp_vec1, tmp_vec2;
-uint16_t *configs;
 double noise_factor;
 int init_basis = 3;
 int n_bits = 16;
@@ -32,6 +30,8 @@ int n_states = (int)pow(2.0, n_sites);
 int main() {
 
     double cf_a[depth], cf_b[depth];
+    vector<double> gs_vec;
+    uint16_t *configs;
     configs = new uint16_t [n_states];
     diag_heis(gs_vec, configs);
     input_output(noise_factor);
@@ -41,14 +41,6 @@ int main() {
     }
     dos_norm(dos_its, -5.0, 0.0001, depth, cf_a, cf_b);
     delete[] configs;
-}
-
-void print_row(int size, mat input) {
-
-    for (int i = 0; i < size; i++) {
-        cout << i << "  " << input(0, i) << endl;
-    }
-
 }
 
 void input_output(double &noise) {
@@ -66,16 +58,4 @@ void input_output(double &noise) {
     cout << "Number of moments calculate: " << n_moments << endl;
     cout << endl;
 
-}
-
-
-void print(vector<uint16_t> input) {
-    for (int i = 0; i < input.size(); i++) {
-        cout << i << "  " << bitset<16>(input[i]) << endl;
-    }
-}
-void print_c(vector<cplxd> input) {
-    for (int i = 0; i < input.size(); i++) {
-        cout << i << "  "<< setprecision(16) << input[i] << endl;
-    }
 }
