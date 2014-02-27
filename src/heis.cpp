@@ -10,18 +10,10 @@
 #include "read_vec.h"
 #include "ed_heis.h"
 #include "const.h"
+#include "bit_utils.h"
 
 using namespace std;
 using namespace arma;
-
-typedef complex<double> cplxd;
-
-// Bit Manipulation.
-uint16_t rotl(uint16_t x, int n);
-uint16_t rotr(uint16_t x, int n);
-// Bit twiddling hacks
-uint16_t swap_bits(uint16_t x);
-void find_set_bits(uint16_t spins, vector<int>& positions);
 
 // Sorting;
 int permute(int a, int b, double &sign);
@@ -61,7 +53,7 @@ void gram_schmidt(mat overlap);
 void print_row(int size, mat input);
 
 void input_output(double &noise);
-
+// Neighbours.
 enum nearest {
     Left,
     Right
@@ -69,6 +61,7 @@ enum nearest {
 
 // Bit masks.
 uint16_t bit_mask = 0XF, on_site_mask = 3, nn_mask = 0XC;
+
 uint16_t bit_cycle[2] = {1, 2};
 
 int depth = 16;
@@ -77,12 +70,13 @@ cplxd I_c(0.0,1.0);
 double eta_g = 0.0005;
 vector<double> gs_vec, tmp_vec1, tmp_vec2;
 uint16_t *configs;
+double noise_factor;
 int num_states = (int)pow(2.0, n_sites);
 int N_its = 1000;
 int n_neigh[2] = {Left, Right};
-int n_bits = 16;
 int init_basis = 3;
 bool pos_def;
+int n_bits = 16;
 
 // xor_array:
 // arranged: {I, sx, sy, sz}
@@ -760,42 +754,6 @@ uint16_t merge_bits(uint16_t mod_bits, uint16_t inp_bit_str, int pos, int nn) {
 
 }
 
-uint16_t swap_bits(uint16_t b) {
-
-    // Bit twidling hacks: xor swap.
-    // Due to how the commutation is organised we sometime need to swap bits in the mod_bits string.
-
-    unsigned int i = 0, j = 2; // positions of bit sequences to swap
-    unsigned int n = 2;    // number of consecutive bits in each sequence
-    uint16_t r;    // bit-swapped result goes here
-
-    uint16_t x = ((b >> i) ^ (b >> j)) & ((1U << n) - 1); // XOR temporary
-    r = b ^ ((x << i) | (x << j));
-    return(r);
-}
-
-uint16_t rotl(uint16_t x, int n) {
-
-    // Left circular shift. Source: Stack exchange probably.
-
-    // In:
-    //    x: integer we want to shift.
-    //    n: how much we want to shift.
-
-          return ((x << n) | (x >> (n_bits - n)));
-}
-
-uint16_t rotr(uint16_t x, int n) {
-
-    // Right circular shift.
-
-    // In:
-    //    x: integer we want to shift.
-    //    n: how much we want to shift.
-
-          return ((x >> n) | (x << (n_bits - n)));
-}
-
 uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coeff, int iter, int pos, int nn) {
 
     // Commute active bits with the Hamiltonian. This is slightly subtle for a number of reasons.
@@ -956,18 +914,4 @@ int insertion_sort(int array[], int length) {
     }
 
     return(counter);
-}
-
-void find_set_bits(uint16_t spins, vector<int>& positions) {
-
-    int i;
-
-    bitset<16> SP(spins);
-
-    for (i = 0; i < SP.size(); i++) {
-        if (SP.test(i) == 1) {
-            positions.push_back(i);
-        }
-    }
-
 }

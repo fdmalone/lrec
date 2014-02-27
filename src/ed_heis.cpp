@@ -8,6 +8,7 @@
 #include <bitset>
 #include <armadillo>
 #include "const.h"
+#include "bit_utils.h"
 
 // Checked relative to Hande ED. Factor of 4 difference in eigenvalues.
 using namespace std;
@@ -60,18 +61,6 @@ void hamiltonian(mat &H, uint16_t *I) {
         }
 
     }
-}
-
-int count_bits(uint16_t inp) {
-
-    int i;
-
-    for (i = 0; i < inp; i++) {
-        inp &= inp - 1;
-    }
-
-    return i;
-
 }
 
 int calc_ms(vec input, uint16_t *I) {
