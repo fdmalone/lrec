@@ -1,5 +1,5 @@
 #ifndef CONST_H
-#define CONDT_H
+#define CONST_H
 
 #include <complex>
 #include <stdint.h>
@@ -14,6 +14,8 @@ const int dos_its = 100000;
 const int n_moments = 16;
 const int max_time = 1000;
 const double time_step = 0.01;
+const double eta_g = 0.0005;
+const int N_its = 1000;
 typedef std::complex<double> cplxd;
 const cplxd I_c(0.0,1.0);
 extern int n_bits;
