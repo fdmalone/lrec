@@ -1,3 +1,6 @@
+#ifndef CONST_H
+#define CONDT_H
+
 #include <complex>
 #include <stdint.h>
 // System Globals;
@@ -13,3 +16,5 @@ const int max_time = 1000;
 const double time_step = 0.01;
 typedef std::complex<double> cplxd;
 extern int n_bits;
+
+#endif /* CONST_H */

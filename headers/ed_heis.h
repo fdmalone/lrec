@@ -1,3 +1,6 @@
+#ifndef ED_HEIS_H
+#define ED_HEIS_H
+
 #include <armadillo>
 #include <vector>
 
@@ -35,3 +38,5 @@ int count_non_zero(vec input);
 void non_zero_all(mat input, uint16_t *I, vec evec, double mag[]);
 
 void diag_heis(vector<double> &eigen, uint16_t *I);
+
+#endif /* ED_HEIS_H */
