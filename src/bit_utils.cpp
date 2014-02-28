@@ -40,6 +40,8 @@ uint16_t rotr(uint16_t x, int n) {
 
 int count_bits(uint16_t inp) {
 
+    // Bit twidling hacks..
+
     int i;
 
     for (i = 0; i < inp; i++) {

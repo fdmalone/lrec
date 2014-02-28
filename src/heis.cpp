@@ -12,6 +12,7 @@
 #include "read_vec.h"
 #include "ed_heis.h"
 #include "spect.h"
+#include "calc.h"
 
 using namespace std;
 using namespace arma;
@@ -21,31 +22,28 @@ void print_row(int size, mat input);
 
 void input_output(double &noise);
 
-int depth = 16;
 double noise_factor;
-int init_basis = 3;
-int n_bits = 16;
-int n_states = (int)pow(2.0, n_sites);
 
-int main() {
+int main(int argc, char* argv[]) {
 
-    double cf_a[depth], cf_b[depth];
-    vector<double> gs_vec;
-    uint16_t *configs;
-    configs = new uint16_t [n_states];
-    diag_heis(gs_vec, configs);
+    //double cf_a[depth], cf_b[depth];
+    //vector<double> gs_vec;
+    //uint16_t *configs;
+    //configs = new uint16_t [n_states];
+    //diag_heis(gs_vec, configs);
+    //commute_wrapper(gs_vec, configs, cf_a, cf_b);
+    //for (int i = 0; i < depth; i++ ) {
+    //    cout << cf_a[i] << "  " << cf_b[i] << endl;
+    //}
+    //dos_norm(dos_its, -5.0, 0.0001, depth, cf_a, cf_b);
+    calc(argv[1]);
     input_output(noise_factor);
-    commute_wrapper(gs_vec, configs, cf_a, cf_b);
-    for (int i = 0; i < depth; i++ ) {
-        cout << cf_a[i] << "  " << cf_b[i] << endl;
-    }
-    dos_norm(dos_its, -5.0, 0.0001, depth, cf_a, cf_b);
-    delete[] configs;
+
+    //delete[] configs;
 }
 
 void input_output(double &noise) {
 
-    cin >> noise;
     cout << "Peforming recursion method." << endl;
     cout << "Starting vector: " << init_basis << endl;
     cout << "Fixed end boundary conditions: " << fixed_ends << endl;
