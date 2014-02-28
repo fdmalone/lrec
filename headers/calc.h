@@ -12,5 +12,6 @@ bool calc_present(vector<string> parsed, string input);
 double val_present(vector<string> parsed, vector<double> val, string input);
 void calc(char *filename);
 void read_input(vector<string> &parsed, vector<double> &val, char *filename);
+void input_output();
 
 #endif /* CALC_H */

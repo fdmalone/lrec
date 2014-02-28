@@ -47,18 +47,18 @@ void read_input(vector<string> &parsed, vector<double> &val, char *filename) {
     int first;
     vector <string> input;
     string st[4];
-    //vector <double> input_val;
 
     while (getline(file, calc)) {
        input.push_back(calc);
-       //input_val.push_back(val);
     }
 
     for (int i = 0; i < input.size(); i++) {
         calc = input[i];
         first = calc.find(space);
-        std::stringstream convert(calc.substr(first+1));
+        // This is our string.
         parsed.push_back(calc.substr(0, first));
+        // Convert numeric part of string to double.
+        std::stringstream convert(calc.substr(first+1));
         convert >> str_inp;
         if (convert.fail()) {
             // Won't use this value so doesn't matter.
@@ -135,5 +135,20 @@ void calc(char *filename) {
     read_input(calc_type, values, filename);
     set_up_calc(calc_type);
     set_up_globals(calc_type, values);
+
+}
+void input_output() {
+
+    cout << "Peforming recursion method." << endl;
+    cout << "Starting vector: " << init_basis << endl;
+    cout << "Fixed end boundary conditions: " << fixed_ends << endl;
+    cout << "Number of sites: " << n_sites << endl;
+    cout << "Values of J_x, J_y, J_z: " << J[0] << "   " << J[1] << "   " << J[2] << endl;
+    cout << "Number of states: " << n_states << endl;
+    cout << "Number of iterations " << N_its << endl;
+    cout << "Randomisation factor " << noise << endl;
+    cout << "Recursion depth " << depth << endl;
+    cout << "Number of moments calculate: " << n_moments << endl;
+    cout << endl;
 
 }
