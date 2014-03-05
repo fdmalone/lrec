@@ -39,8 +39,6 @@ void calc_type() {
             if (moments) {
                 calc_moments();
             }
-            if (corr_func) {
-                c
             delete[] configs;
         }
         else {

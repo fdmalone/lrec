@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <stdint.h>
 #include <fstream>
+#include <cmath>
 #include <bitset>
 #include <armadillo>
 #include "const.h"
@@ -267,6 +268,51 @@ void non_zero_all(mat input, uint16_t *I, vec evec, double mag[]) {
     file.close();
 }
 
+void correlation_function_exact(double trans[], double mag[]) {
+
+    double t = 0.0;
+    cplxd corr;
+
+    ofstream file;
+    file.open("correlation_function_exact.dat");
+
+    cout << (int)(max_time/time_step) << endl;
+    for (int i = 0; i < (int)(max_time/time_step); i++) {
+        corr = 0.0;
+        for (int j = 0; j < n_states; j++) {
+            corr.real() += mag[j]*cos(trans[j]*t);
+            corr.imag() += mag[j]*sin(trans[j]*t);
+        }
+        file << t << "  " << corr.real() << "   " << corr.imag() << endl;
+        t += time_step;
+    }
+
+    file.close();
+
+}
+
+void correlation_function_calc(vector<double> trans, vector<double> mag) {
+
+    double t = 0.0;
+    cplxd corr;
+
+    ofstream file;
+    file.open("correlation_function_calc.dat");
+
+    for (int i = 0; i < (int)(max_time/time_step); i++) {
+        corr = 0.0;
+        for (int j = 0; j < mag.size(); j++) {
+            corr.real() += mag[j]*cos(trans[j]*t);
+            corr.imag() += mag[j]*sin(trans[j]*t);
+        }
+        file << t << "  " << corr.real() << "   " << corr.imag() << endl;
+        t += time_step;
+    }
+
+    file.close();
+
+}
+
 void exact_moments(double trans[], double mag[], int n) {
 
     // Calculate \mu^n = int_{-\infty}^{\infty} \omega^n A(\omega).
@@ -297,7 +343,7 @@ void calc_moments() {
     vector<double> sub_sec(10), maxima, freq;
     ifstream inp;
     double a, b, slope1, slope2;
-    inp.open("dos_overlap_open.dat");
+    inp.open("dos.dat");
 
     if (inp.is_open()) cout << "opened " << "   " << dos_its << endl;
     while (!inp.eof()) {
@@ -319,13 +365,16 @@ void calc_moments() {
             freq.push_back(dos[i][0]);
         }
     }
-
     for (int i = 0; i < maxima.size(); i++) {
         mu_0 += maxima[i];
         cout << "freq: " << freq[i] << endl;
     }
     for (int i = 0; i < maxima.size(); i++) {
         maxima[i] = maxima[i]/mu_0;
+    }
+
+    if (corr_func) {
+        correlation_function_calc(freq, maxima);
     }
 
     out.open("calc_moments.dat");
@@ -342,7 +391,6 @@ void calc_moments() {
     out.close();
 
 }
-
 void diag_heis(vector<double> &eigen, uint16_t *I) {
 
     states(I);
@@ -373,5 +421,8 @@ void diag_heis(vector<double> &eigen, uint16_t *I) {
     non_zero_overlap(e_vec, I, spec_diff, spec_amp);
     non_zero_all(e_vec, I, e_val, spec_amp);
     exact_moments(spec_diff, spec_amp, n_moments);
+    if (corr_func) {
+        correlation_function_exact(spec_diff, spec_amp);
+    }
 
 }

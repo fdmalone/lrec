@@ -80,7 +80,7 @@ void dos_norm(double *a, double *b) {
     double dos;
 
     ofstream file;
-    file.open("dos_open_t0.dat");
+    file.open("dos.dat");
 
     for (int i = 0; i < dos_its; i++) {
         omega += dos_step;
@@ -151,7 +151,7 @@ void dos_mat(double *a_c, double *b_c, mat input) {
         omega(i,i) = 1.0;
     }
     ofstream out;
-    out.open("dos_overlap_open.dat");
+    out.open("dos.dat");
     for (int i = 0; i < dos_its; i++) {
         ome += dos_step;
         jinv = inv(ome*omega - eta_g*I_c*omega-J);

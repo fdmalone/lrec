@@ -28,7 +28,7 @@ extern double omega;
 // Number of moments you want to calculate.
 extern int n_moments;
 // Correlation functions: get until max_time*time_step;
-extern int max_time;
+extern double max_time;
 extern double time_step;
 // Positive complex number for avoiding poles.
 extern double eta_g;

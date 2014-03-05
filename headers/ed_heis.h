@@ -33,6 +33,10 @@ void exact_moments(double trans[], double mag[], int n);
 
 void calc_moments();
 
+void correlation_function_exact(double trans[], double mag[]);
+
+void correlation_function_calc(vector<double> trans, vector<double> mag);
+
 int count_non_zero(vec input);
 
 void non_zero_all(mat input, uint16_t *I, vec evec, double mag[]);

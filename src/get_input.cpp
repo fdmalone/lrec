@@ -29,7 +29,7 @@ int dos_its = 10000;
 double omega;
 int n_moments;
 double dos_step;
-int max_time;
+double max_time;
 double time_step;
 double eta_g = 0.005;
 int N_its;
@@ -129,6 +129,8 @@ void set_up_globals(vector<string> parsed, vector<double> val) {
     initial_coeff = (cplxd)val_present(parsed, val, "initial_coeff");
     noise_factor = val_present(parsed, val, "noise_factor");
     overlap_depth = val_present(parsed, val, "overlap_depth");
+    max_time = val_present(parsed, val, "max_time");
+    time_step = val_present(parsed, val, "time_step");
     n_states = (int)pow(2.0, n_sites);
     dos_step = abs(2*omega)/dos_its;
 
@@ -147,6 +149,7 @@ void print_input() {
     cout << "Number of moments calculate: " << n_moments << endl;
     cout << "Spectral resolution: " << dos_step << endl;
     cout << "Spectral width : " << abs(2*omega) << endl;
+    cout << "Correlation function: " << corr_func << "  " << max_time/time_step << "   " << max_time << "  " << time_step << endl;
     cout << endl;
 
 }
