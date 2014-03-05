@@ -18,12 +18,11 @@ const cplxd I_c(0.0,1.0);
 extern int n_sites;
 // Heisenberg coupling constant.
 extern double J[3];
-// Fixed end (true) or periodic (false) boundary conditions.
-extern bool fixed_ends;
 // Number of states, for exact diagonalisation.
 extern int n_states;
 // Number of iterations when calculating density of states.
 extern int dos_its;
+extern double dos_step;
 // Starting point for density of states calc.
 extern double omega;
 // Number of moments you want to calculate.
@@ -42,6 +41,9 @@ extern int depth;
 // Initial basis operator.
 extern int init_basis;
 extern cplxd initial_coeff;
+// How many overlap matrix elements we want to use.
+extern int overlap_depth;
+extern double noise_factor;
 
 // Calculation options.
 
@@ -50,10 +52,13 @@ extern bool recursion;
 extern bool exact_diag;
 extern bool inf;
 extern bool T0;
+// Fixed end (true) or periodic (false) boundary conditions.
+extern bool fixed_ends;
 extern bool find_overlap;
 extern bool dos;
 extern bool moments;
 extern bool corr_func;
+extern bool keep_files;
 //extern bool time;
 
 #endif /* CONST_H */

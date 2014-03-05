@@ -10,9 +10,7 @@
 using namespace std;
 using namespace arma;
 
-double a_av[100], b_av[100];
-
-double continued_fraction(double a[], double b[], double num, double omega) {
+double continued_fraction(double *a, double *b) {
 
     // Lenz's algorithm from numerical recipes.
 
@@ -27,7 +25,7 @@ double continued_fraction(double a[], double b[], double num, double omega) {
     c0 = f0;
     d0 = 0;
 
-    for (i = 0; i < num; i++) {
+    for (i = 0; i < depth; i++) {
 
         d0 = omega - eta - a[i] - b[i]*b[i]*d0;
 
@@ -51,7 +49,7 @@ double continued_fraction(double a[], double b[], double num, double omega) {
 
 }
 
-void overlap_matrix(int size, mat &overlap, uint16_t *configs, vector<double> gs_vec) {
+void overlap_matrix(mat &overlap, uint16_t *configs, vector<double> gs_vec) {
 
     vector<int> lengths;
     vector<uint16_t> bas_el, tmp_el_a, tmp_el_b;
@@ -66,7 +64,7 @@ void overlap_matrix(int size, mat &overlap, uint16_t *configs, vector<double> gs
     for (int i = 0; i < 1; i++) {
         tmp_el_a.assign(bas_el.begin()+shift_a, bas_el.begin()+lengths[i]+shift_a);
         tmp_coeff_a.assign(bas_coeff.begin()+shift_a, bas_coeff.begin()+lengths[i]+shift_a);
-        for (int j = 0; j < size; j++) {
+        for (int j = 0; j < overlap_depth; j++) {
             tmp_el_b.assign(bas_el.begin()+shift_b, bas_el.begin()+lengths[j]+shift_b);
             tmp_coeff_b.assign(bas_coeff.begin()+shift_b, bas_coeff.begin()+lengths[j]+shift_b);
             overlap(i,j) = gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec).real();
@@ -77,16 +75,16 @@ void overlap_matrix(int size, mat &overlap, uint16_t *configs, vector<double> gs
     }
 }
 
-void dos_norm(int its, double omega, double step, int depth, double a[], double b[]) {
+void dos_norm(double *a, double *b) {
 
     double dos;
 
     ofstream file;
     file.open("dos_open_t0.dat");
 
-    for (int i = 0; i < its; i++) {
-        omega += step;
-        dos = continued_fraction(a, b, depth, omega);
+    for (int i = 0; i < dos_its; i++) {
+        omega += dos_step;
+        dos = continued_fraction(a, b);
         file << setprecision(16) << omega << "   " << dos << endl;
     }
 
@@ -134,28 +132,28 @@ void dos_noise(double factor) {
     myfile.close();
 }
 */
-void dos_mat(int L, double a_c[], double b_c[], mat input, double it, int steps) {
+void dos_mat(double *a_c, double *b_c, mat input) {
 
-    cx_mat J(L,L), omega(L, L), jinv(L,L);
+    cx_mat J(depth,depth), omega(depth, depth), jinv(depth, depth);
     double ome = -4.0;
     cplxd ds;
 
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < L; j++) {
+    for (int i = 0; i < depth; i++) {
+        for (int j = 0; j < depth; j++) {
             if (j == i+1) {
                 J(i,j) = b_c[i+1];
             }
         }
     }
     J += J.t();
-    for (int i = 0; i < L; i++) {
+    for (int i = 0; i < depth; i++) {
         J(i,i) = a_c[i];
         omega(i,i) = 1.0;
     }
     ofstream out;
     out.open("dos_overlap_open.dat");
-    for (int i = 0; i < steps; i++) {
-        ome += it;
+    for (int i = 0; i < dos_its; i++) {
+        ome += dos_step;
         jinv = inv(ome*omega - eta_g*I_c*omega-J);
         ds = 0.0;
         for (int j = 0; j < depth; j++) {

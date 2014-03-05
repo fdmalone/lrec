@@ -17,9 +17,10 @@ bool find_overlap = false;
 bool dos = false;
 bool moments = false;
 bool corr_func = false;
+bool keep_files = false;
 
 // Global data.
-// Some defaults, fuck the user if they don't define them.
+// Some defaults.
 int n_sites;
 double J[3];
 bool fixed_ends = true;
@@ -27,6 +28,7 @@ int n_states;
 int dos_its = 10000;
 double omega;
 int n_moments;
+double dos_step;
 int max_time;
 double time_step;
 double eta_g = 0.005;
@@ -35,6 +37,8 @@ int n_bits;
 int depth;
 int init_basis;
 cplxd initial_coeff;
+int overlap_depth;
+double noise_factor;
 
 void read_input(vector<string> &parsed, vector<double> &val, char *filename) {
 
@@ -94,7 +98,6 @@ double val_present(vector<string> parsed, vector<double> val, string input) {
 
 
 void set_up_calc(vector<string> parsed) {
-
     recursion = calc_present(parsed, "recursion");
     exact_diag = calc_present(parsed, "exact_diag");
     inf = calc_present(parsed, "inf");
@@ -103,7 +106,8 @@ void set_up_calc(vector<string> parsed) {
     dos = calc_present(parsed, "dos");
     moments = calc_present(parsed, "moments");
     corr_func = calc_present(parsed, "corr_func");
-
+    fixed_ends = calc_present(parsed, "fixed_ends");
+    keep_files = calc_present(parsed, "keep_files");
 }
 
 void set_up_globals(vector<string> parsed, vector<double> val) {
@@ -112,8 +116,6 @@ void set_up_globals(vector<string> parsed, vector<double> val) {
     J[0] = val_present(parsed, val, "Jx");
     J[1] = val_present(parsed, val, "Jy");
     J[2] = val_present(parsed, val, "Jz");
-    fixed_ends = (bool)val_present(parsed, val, "fixed_ends");
-    //n_states = (int)val_present(parsed, val, "n_states");
     dos_its = (int)val_present(parsed, val, "dos_its");
     omega = (int)val_present(parsed, val, "omega");
     n_moments = (int)val_present(parsed, val, "n_moments");
@@ -125,19 +127,13 @@ void set_up_globals(vector<string> parsed, vector<double> val) {
     depth = (int)val_present(parsed, val, "depth");
     init_basis = (int)val_present(parsed, val, "init_basis");
     initial_coeff = (cplxd)val_present(parsed, val, "initial_coeff");
+    noise_factor = val_present(parsed, val, "noise_factor");
+    overlap_depth = val_present(parsed, val, "overlap_depth");
+    n_states = (int)pow(2.0, n_sites);
+    dos_step = abs(2*omega)/dos_its;
 
 }
-
-void calc(char *filename) {
-
-    vector<double> values;
-    vector<string> calc_type;
-    read_input(calc_type, values, filename);
-    set_up_calc(calc_type);
-    set_up_globals(calc_type, values);
-
-}
-void input_output() {
+void print_input() {
 
     cout << "Peforming recursion method." << endl;
     cout << "Starting vector: " << init_basis << endl;
@@ -146,9 +142,21 @@ void input_output() {
     cout << "Values of J_x, J_y, J_z: " << J[0] << "   " << J[1] << "   " << J[2] << endl;
     cout << "Number of states: " << n_states << endl;
     cout << "Number of iterations " << N_its << endl;
-    cout << "Randomisation factor " << noise << endl;
+    cout << "Randomisation factor " << noise_factor << endl;
     cout << "Recursion depth " << depth << endl;
     cout << "Number of moments calculate: " << n_moments << endl;
+    cout << "Spectral resolution: " << dos_step << endl;
+    cout << "Spectral width : " << abs(2*omega) << endl;
     cout << endl;
+
+}
+void set_up_system(char *filename) {
+
+    vector<double> values;
+    vector<string> calc_type;
+    read_input(calc_type, values, filename);
+    set_up_calc(calc_type);
+    set_up_globals(calc_type, values);
+    print_input();
 
 }

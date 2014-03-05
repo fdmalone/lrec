@@ -329,7 +329,7 @@ void remove_zeros(vector<uint16_t> &input, vector<cplxd> &coeffs) {
 
 }
 
-void commute_wrapper(vector<double> ground_state, uint16_t *configs, double cf_a[], double cf_b[]) {
+void commute_wrapper(vector<double> ground_state, uint16_t *configs, double *cf_a, double *cf_b) {
 
     ofstream file1, file2, file3;
     file1.open("basis_lengths.dat");
@@ -344,21 +344,20 @@ void commute_wrapper(vector<double> ground_state, uint16_t *configs, double cf_a
     cplxd new_coeff, tmp_coeff, coeff_sig[4], check = 0;
     vector<uint16_t> bit_str_0, bit_str_i, bit_str_old;
     vector<cplxd> coeff_array_0, coeff_array_i, coeff_array_old;
-
     bit_str_0.push_back(init_basis);
     coeff_array_0.push_back(initial_coeff);
     i = 0;
     delta = 1;
-    lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
+    lanc_b[0] = gs_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0, configs, ground_state).real();
     cf_b[0] = lanc_b[0];
     divide_c(coeff_array_0,sqrt(lanc_b[0]));
+    // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
+    // Hopefully should reduce on reallocation of array, although probably too large at the same time.
+    bit_str_i.reserve(1e5);
+    coeff_array_i.reserve(1e5);
 
     for (dep = 0; dep < depth; dep++) {
         max = -1;
-        // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
-        // Hopefully should reduce on reallocation of array, although probably too large at the same time.
-        bit_str_i.reserve((dep+1)*4*bit_str_0.size());
-        coeff_array_i.reserve((dep+1)*4*bit_str_0.size());
         for (bits = 0; bits < bit_str_0.size(); bits++) {
             for (pos = 0; pos < n_bits; pos = pos + 2) {
                 onsite_bits = (bit_str_0[bits] >> pos) & on_site_mask;
@@ -389,15 +388,114 @@ void commute_wrapper(vector<double> ground_state, uint16_t *configs, double cf_a
         }
         // a_i = Tr(Lu, u)
         remove_zeros(bit_str_i, coeff_array_i);
+        //lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
+        lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, ground_state).real();
+        // Calculate Lu - a_i u.
+        merge_lists(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, -1.0*lanc_a[dep]);
+        // Caluculate V = Lu_i - a_i u_i - b[i] u_i-1
+        merge_lists(bit_str_i, bit_str_old, coeff_array_i, coeff_array_old, -1.0*lanc_b[dep]);
+        // b_{i+1} = Tr(V_{i+1}, V_{i+1})
+        //check = inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i);
+        check = gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, ground_state).real();
+        cout <<dep << "   " <<lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
+        cf_a[dep] = lanc_a[dep];
+        if (check.real() < 0) {
+            cout << "imag" << endl;
+            break;
+        }
+        lanc_b[dep+1] = sqrt(check.real());
+        cf_b[dep+1] = lanc_b[dep+1];
+        file1 << bit_str_0.size() << endl;
+        for (int iter = 0; iter < bit_str_0.size(); iter++) {
+            file2 << bit_str_0[iter] << endl;
+            file3 << setprecision(16) << coeff_array_0[iter] << endl;
+        }
+        if (abs(lanc_b[dep+1]) < de) {
+            cout << "terminated" << endl;
+            break;
+        }
+        divide_c(coeff_array_i, lanc_b[dep+1]);
+        remove_zeros(bit_str_i, coeff_array_i);
+        bit_str_old = bit_str_0;
+        bit_str_0 = bit_str_i;
+        coeff_array_old = coeff_array_0;
+        coeff_array_0 = coeff_array_i;
+        bit_str_i.resize(0);
+        coeff_array_i.resize(0);
+    }
+
+    file1.close();
+    file2.close();
+    file3.close();
+}
+void commute_wrapper_inf(double *cf_a, double *cf_b) {
+
+    ofstream file1, file2, file3;
+    file1.open("basis_lengths.dat");
+    file2.open("basis_elements.dat");
+    file3.open("basis_coeffs.dat");
+
+    int bits, pos, nn, sig, i, num_bit_str, disp_start, disp_end, dep, disp, shift, max;
+    uint16_t rank[4];
+    uint16_t onsite_bits, nn_bits;
+    uint16_t new_bits, bits_sig[4];
+    double lanc_a[1000], lanc_b[1000], delta;
+    cplxd new_coeff, tmp_coeff, coeff_sig[4], check = 0;
+    vector<uint16_t> bit_str_0, bit_str_i, bit_str_old;
+    vector<cplxd> coeff_array_0, coeff_array_i, coeff_array_old;
+
+    bit_str_0.push_back(init_basis);
+    coeff_array_0.push_back(initial_coeff);
+    i = 0;
+    delta = 1;
+    lanc_b[0] = inf_trace(bit_str_0, bit_str_0, coeff_array_0, coeff_array_0);
+    cf_b[0] = lanc_b[0];
+    divide_c(coeff_array_0,sqrt(lanc_b[0]));
+
+    // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
+    // Hopefully should reduce on reallocation of array, although probably too large at the same time.
+    bit_str_i.reserve(1e5);
+    coeff_array_i.reserve(1e5);
+
+    for (dep = 0; dep < depth; dep++) {
+        max = -1;
+         for (bits = 0; bits < bit_str_0.size(); bits++) {
+            for (pos = 0; pos < n_bits; pos = pos + 2) {
+                onsite_bits = (bit_str_0[bits] >> pos) & on_site_mask;
+                // [H, I] = 0.
+                if (onsite_bits != 0) {
+                    i = 0;
+                    // Loop over neighbours.
+                    tmp_coeff = coeff_array_0[bits];
+                    for (nn = 0; nn < 2; nn++) {
+                        nn_bits = ((bit_str_0[bits] >> boundary(pos, nn)) & on_site_mask);
+                        // Perform commutation of input sigma matrix with the two other types.
+                        for (sig = 0; sig < 2; sig++) {
+                            // Find result of [H,sigma].
+                            new_bits = comm_bits(onsite_bits, nn_bits, tmp_coeff, sig, pos, nn);
+                            new_bits = merge_bits(new_bits, bit_str_0[bits], pos, nn);
+                            bits_sig[i] = new_bits;
+                            coeff_sig[i] = tmp_coeff;
+                            tmp_coeff = coeff_array_0[bits];
+                            i = i + 1;
+                        }
+                    }
+                    // Rank new bits.
+                    insertion_rank(bits_sig, rank, 4);
+                    // Add new bits and coeffecients to list.
+                    add_new_bit_str(bits_sig, coeff_sig, rank, 4, bit_str_i, coeff_array_i, max);
+                }
+            }
+        }
+        // a_i = Tr(Lu, u)
+        remove_zeros(bit_str_i, coeff_array_i);
         lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
-        //lanc_a[dep] = gs_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, configs, ground_state).real();
         // Calculate Lu - a_i u.
         merge_lists(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, -1.0*lanc_a[dep]);
         // Caluculate V = Lu_i - a_i u_i - b[i] u_i-1
         merge_lists(bit_str_i, bit_str_old, coeff_array_i, coeff_array_old, -1.0*lanc_b[dep]);
         // b_{i+1} = Tr(V_{i+1}, V_{i+1})
         check = inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i);
-        //check = gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, ground_state).real();
         cout <<dep << "   " <<lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
         cf_a[dep] = lanc_a[dep];
         if (check.real() < 0) {
@@ -412,7 +510,7 @@ void commute_wrapper(vector<double> ground_state, uint16_t *configs, double cf_a
             file3 << setprecision(16) << coeff_array_0[iter] << endl;
         }
         if (abs(lanc_b[dep+1]) < de) {
-            cout << "terminated" << endl;
+            cout << "terminated"<< "  " << dep << endl;
             break;
         }
         divide_c(coeff_array_i, lanc_b[dep+1]);

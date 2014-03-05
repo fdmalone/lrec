@@ -289,7 +289,7 @@ void exact_moments(double trans[], double mag[], int n) {
 
 }
 
-void calc_moments(int n, double *mav) {
+void calc_moments() {
 
     int it = 0;
     vector < vector<double> > dos(dos_its+1, vector<double> (2,0));
@@ -330,12 +330,12 @@ void calc_moments(int n, double *mav) {
 
     out.open("calc_moments.dat");
 
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < n_moments; j++) {
         mu_n = 0;
         for (int k = 0; k < maxima.size(); k++) {
              mu_n += pow(freq[k], j)*maxima[k];
         }
-        mav[j] += mu_n;
+        //mav[j] += mu_n;
         out << j << "  " << mu_n << endl;
     }
 

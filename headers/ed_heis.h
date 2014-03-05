@@ -31,7 +31,7 @@ double energy_noise(vector<double> input1, vector<double> input2, int it, double
 
 void exact_moments(double trans[], double mag[], int n);
 
-void calc_moments(int n, double *mav);
+void calc_moments();
 
 int count_non_zero(vec input);
 
