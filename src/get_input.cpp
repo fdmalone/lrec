@@ -100,6 +100,7 @@ double val_present(vector<string> parsed, vector<double> val, string input) {
 
 
 void set_up_calc(vector<string> parsed) {
+
     recursion = calc_present(parsed, "recursion");
     exact_diag = calc_present(parsed, "exact_diag");
     inf = calc_present(parsed, "inf");
@@ -112,6 +113,7 @@ void set_up_calc(vector<string> parsed) {
     keep_files = calc_present(parsed, "keep_files");
     random_sim = calc_present(parsed, "random_sim");
     poly_spec = calc_present(parsed, "poly_spec");
+
 }
 
 void set_up_globals(vector<string> parsed, vector<double> val) {
@@ -143,20 +145,22 @@ void print_input() {
 
     cout << "Peforming recursion method." << endl;
     cout << "Starting vector: " << init_basis << endl;
-    cout << "Fixed end boundary conditions: " << fixed_ends << endl;
+    cout << "Fixed end boundary conditions: " << boolalpha <<fixed_ends << endl;
     cout << "Number of sites: " << n_sites << endl;
     cout << "Values of J_x, J_y, J_z: " << J[0] << "   " << J[1] << "   " << J[2] << endl;
     cout << "Number of states: " << n_states << endl;
-    cout << "Number of iterations " << noise_its << endl;
-    cout << "Randomisation factor " << noise_factor << endl;
-    cout << "Recursion depth " << depth << endl;
+    cout << "Number of iterations: " << noise_its << endl;
+    cout << "Randomisation factor: " << noise_factor << endl;
+    cout << "Recursion depth: " << depth << endl;
     cout << "Number of moments calculate: " << n_moments << endl;
     cout << "Spectral resolution: " << dos_step << endl;
-    cout << "Spectral width : " << abs(2*omega) << endl;
+    cout << "Spectral width: " << abs(2*omega) << endl;
     cout << "Correlation function: " << corr_func << "  " << max_time/time_step << "   " << max_time << "  " << time_step << endl;
+    cout << "Polynomials: " << boolalpha << poly_spec << endl;
     cout << endl;
 
 }
+
 void set_up_system(char *filename) {
 
     vector<double> values;

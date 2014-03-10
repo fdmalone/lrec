@@ -13,10 +13,7 @@ using namespace std;
 void calc_type() {
 
     if (recursion) {
-        double *cf_a, *cf_b;
-        cf_a = new double[depth];
-        cf_b = new double[depth];
-        vector<double> mom_vec;
+        vector<double> cf_a(depth), cf_b(depth), mom_vec;
         if (T0 || find_overlap) {
             vector<double> ground_state;
             uint16_t *configs;
@@ -24,23 +21,18 @@ void calc_type() {
             diag_heis(ground_state, configs);
             if (find_overlap) {
                 commute_wrapper_inf(cf_a, cf_b);
+                vector<double> ovlp(depth);
+                overlap_matrix(ovlp, configs, ground_state);
+                if (random_sim) {
+                    random_overlap(ovlp);
+                }
+                if (poly_spec) {
+                    poly_dos(cf_a, cf_b, ovlp);
+                }
             }
             else {
                 commute_wrapper(ground_state, configs, cf_a, cf_b);
-            }
-            if (dos) {
-                if (find_overlap) {
-                    vector<double> ovlp(depth);
-                    overlap_matrix(ovlp, configs, ground_state);
-                    if (random_sim) {
-                        random_overlap(ovlp);
-                    }
-                    if (poly_spec) {
-                        poly_dos(cf_a, cf_b, ovlp);
-                    }
-                    //dos_mat(cf_a, cf_b, ovlp);
-                }
-                else {
+                if (dos) {
                     dos_norm(cf_a, cf_b);
                 }
             }
@@ -58,8 +50,6 @@ void calc_type() {
                 calc_moments(mom_vec);
             }
         }
-        delete[] cf_a;
-        delete[] cf_b;
     }
 }
 
@@ -77,6 +67,7 @@ void finish_calc() {
         remove("non_zero_open.dat");
     }
 }
+
 void do_calc(char *filename) {
 
    set_up_system(filename);

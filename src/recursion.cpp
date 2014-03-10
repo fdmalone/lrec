@@ -329,7 +329,7 @@ void remove_zeros(vector<uint16_t> &input, vector<cplxd> &coeffs) {
 
 }
 
-void commute_wrapper(vector<double> ground_state, uint16_t *configs, double *cf_a, double *cf_b) {
+void commute_wrapper(vector<double> ground_state, uint16_t *configs, vector<double> &cf_a, vector<double> &cf_b) {
 
     ofstream file1, file2, file3;
     file1.open("basis_lengths.dat");
@@ -428,7 +428,7 @@ void commute_wrapper(vector<double> ground_state, uint16_t *configs, double *cf_
     file2.close();
     file3.close();
 }
-void commute_wrapper_inf(double *cf_a, double *cf_b) {
+void commute_wrapper_inf(vector<double> &cf_a, vector<double> &cf_b) {
 
     ofstream file1, file2, file3;
     file1.open("basis_lengths.dat");

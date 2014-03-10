@@ -11,7 +11,7 @@
 using namespace std;
 using namespace arma;
 
-double continued_fraction(double *a, double *b) {
+double continued_fraction(vector<double> a, vector<double> b) {
 
     // Lenz's algorithm from numerical recipes.
 
@@ -90,7 +90,7 @@ void random_overlap(vector<double> &overlap) {
 
 }
 
-void dos_norm(double *a, double *b) {
+void dos_norm(vector<double> a, vector<double> b) {
 
     double dos;
 
@@ -147,7 +147,7 @@ void dos_noise(double factor) {
     myfile.close();
 }
 */
-void dos_mat(double *a_c, double *b_c, vector<double> input) {
+void dos_mat(vector<double> a_c, vector<double> b_c, vector<double> input) {
 
     cx_mat J(depth,depth), omega(depth, depth), jinv(depth, depth);
     double ome = -4.0;
