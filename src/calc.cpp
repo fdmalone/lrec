@@ -6,6 +6,7 @@
 #include "recursion.h"
 #include "spect.h"
 #include "get_input.h"
+#include "poly.h"
 
 using namespace std;
 
@@ -29,12 +30,15 @@ void calc_type() {
             }
             if (dos) {
                 if (find_overlap) {
-                    mat ovlp(depth, depth);
+                    vector<double> ovlp(depth);
                     overlap_matrix(ovlp, configs, ground_state);
                     if (random_sim) {
                         random_overlap(ovlp);
                     }
-                    dos_mat(cf_a, cf_b, ovlp);
+                    if (poly_spec) {
+                        poly_dos(cf_a, cf_b, ovlp);
+                    }
+                    //dos_mat(cf_a, cf_b, ovlp);
                 }
                 else {
                     dos_norm(cf_a, cf_b);

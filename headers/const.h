@@ -62,6 +62,7 @@ extern bool moments;
 extern bool corr_func;
 extern bool random_sim;
 extern bool keep_files;
+extern bool poly_spec;
 //extern bool time;
 
 #endif /* CONST_H */

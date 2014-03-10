@@ -50,7 +50,7 @@ double continued_fraction(double *a, double *b) {
 
 }
 
-void overlap_matrix(mat &overlap, uint16_t *configs, vector<double> gs_vec) {
+void overlap_matrix(vector<double> &overlap, uint16_t *configs, vector<double> gs_vec) {
 
     vector<int> lengths;
     vector<uint16_t> bas_el, tmp_el_a, tmp_el_b;
@@ -62,36 +62,31 @@ void overlap_matrix(mat &overlap, uint16_t *configs, vector<double> gs_vec) {
 
     read_output(lengths, bas_el, bas_coeff);
 
-    for (int i = 0; i < 1; i++) {
-        tmp_el_a.assign(bas_el.begin()+shift_a, bas_el.begin()+lengths[i]+shift_a);
-        tmp_coeff_a.assign(bas_coeff.begin()+shift_a, bas_coeff.begin()+lengths[i]+shift_a);
-        for (int j = 0; j < overlap_depth; j++) {
-            tmp_el_b.assign(bas_el.begin()+shift_b, bas_el.begin()+lengths[j]+shift_b);
-            tmp_coeff_b.assign(bas_coeff.begin()+shift_b, bas_coeff.begin()+lengths[j]+shift_b);
-            overlap(i,j) = gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec).real();
-            shift_b += lengths[j];
-        }
-        shift_a += lengths[i];
-        shift_b = 0;
+    tmp_el_a.assign(bas_el.begin()+shift_a, bas_el.begin()+lengths[0]+shift_a);
+    tmp_coeff_a.assign(bas_coeff.begin()+shift_a, bas_coeff.begin()+lengths[0]+shift_a);
+    for (int j = 0; j < overlap_depth; j++) {
+        tmp_el_b.assign(bas_el.begin()+shift_b, bas_el.begin()+lengths[j]+shift_b);
+        tmp_coeff_b.assign(bas_coeff.begin()+shift_b, bas_coeff.begin()+lengths[j]+shift_b);
+        overlap[j] = gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec).real();
+        shift_b += lengths[j];
     }
 }
 
-void random_overlap(mat &overlap) {
+void random_overlap(vector<double> &overlap) {
 
-    mat av(depth, depth);
+    vector<double> av(depth);
     double r;
     av = overlap;
 
     for (int i = 0; i < noise_its; i++) {
         for (int j = 0; j < overlap_depth; j++) {
            r = (1 + ((double)rand()/RAND_MAX - 0.5)*noise_factor);
-           av(0,j) += overlap(0,j)*r;
+           av[j] += overlap[j]*r;
         }
     }
-    //for (int i = 0; i < overlap_depth; i++) {
-    //    cout << i << "  " << av(0,i) <<"  " <<0.01*av(0,i) << endl;
-    //}
-    overlap = 1.0/(double)(noise_its+1) * av;
+    for (int i = 0; i < overlap_depth; i++) {
+        overlap[i] = 1.0/(double)(noise_its + 1)*av[i];
+    }
 
 }
 
@@ -152,7 +147,7 @@ void dos_noise(double factor) {
     myfile.close();
 }
 */
-void dos_mat(double *a_c, double *b_c, mat input) {
+void dos_mat(double *a_c, double *b_c, vector<double> input) {
 
     cx_mat J(depth,depth), omega(depth, depth), jinv(depth, depth);
     double ome = -4.0;
@@ -177,7 +172,7 @@ void dos_mat(double *a_c, double *b_c, mat input) {
         jinv = inv(ome*omega - eta_g*I_c*omega-J);
         ds = 0.0;
         for (int j = 0; j < overlap_depth; j++) {
-            ds += jinv(j,0)*input(0,j);
+            ds += jinv(j,0)*input[j];
         }
         out << setprecision(16) << ome << "  " << ds.imag() << endl;
     }

@@ -19,6 +19,7 @@ bool moments = false;
 bool corr_func = false;
 bool keep_files = false;
 bool random_sim = false;
+bool poly_spec = false;
 
 // Global data.
 // Some defaults.
@@ -110,6 +111,7 @@ void set_up_calc(vector<string> parsed) {
     fixed_ends = calc_present(parsed, "fixed_ends");
     keep_files = calc_present(parsed, "keep_files");
     random_sim = calc_present(parsed, "random_sim");
+    poly_spec = calc_present(parsed, "poly_spec");
 }
 
 void set_up_globals(vector<string> parsed, vector<double> val) {
