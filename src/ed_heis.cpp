@@ -268,6 +268,28 @@ void non_zero_all(mat input, uint16_t *I, vec evec, double mag[]) {
     file.close();
 }
 
+void correlation_function_moments(vector<double> mom_vec) {
+
+    ofstream file;
+    file.open("corr_func_mom.dat");
+    double t = 0.0, corr, sign = 1.0, fact;
+
+    for (int j = 0; j < (int)(max_time/time_step); j++) {
+        corr = 0.0;
+        fact = 1.0;
+        for (int i = 0; i < mom_vec.size(); i++) {
+            if ((i % 2) == 0) {
+                corr += sign*pow(1.0*t, i)*mom_vec[i]/fact;
+                sign *= -1.0;
+            }
+            fact *= (double)(i+1);
+        }
+        file << t << "   " << corr << endl;
+        t += time_step;
+    }
+
+}
+
 void correlation_function_exact(double trans[], double mag[]) {
 
     double t = 0.0;
@@ -335,7 +357,7 @@ void exact_moments(double trans[], double mag[], int n) {
 
 }
 
-void calc_moments() {
+void calc_moments(vector<double> &mom_vec) {
 
     int it = 0;
     vector < vector<double> > dos(dos_its+1, vector<double> (2,0));
@@ -373,10 +395,6 @@ void calc_moments() {
         maxima[i] = maxima[i]/mu_0;
     }
 
-    if (corr_func) {
-        correlation_function_calc(freq, maxima);
-    }
-
     out.open("calc_moments.dat");
 
     for (int j = 0; j < n_moments; j++) {
@@ -384,11 +402,17 @@ void calc_moments() {
         for (int k = 0; k < maxima.size(); k++) {
              mu_n += pow(freq[k], j)*maxima[k];
         }
+        mom_vec.push_back(mu_n);
         //mav[j] += mu_n;
         out << j << "  " << mu_n << endl;
     }
 
     out.close();
+    if (corr_func) {
+        correlation_function_calc(freq, maxima);
+        correlation_function_moments(mom_vec);
+    }
+
 
 }
 void diag_heis(vector<double> &eigen, uint16_t *I) {

@@ -32,8 +32,6 @@ extern double max_time;
 extern double time_step;
 // Positive complex number for avoiding poles.
 extern double eta_g;
-// Number of iterations for random noise calculations, monte carlo steps effectively.
-extern int N_its;
 // Number of bits to store operator string.
 extern int n_bits;
 // Recursion depth.
@@ -43,7 +41,11 @@ extern int init_basis;
 extern cplxd initial_coeff;
 // How many overlap matrix elements we want to use.
 extern int overlap_depth;
+// Randomisation strength.
 extern double noise_factor;
+// Number of iterations for random noise calculations, monte carlo steps effectively.
+extern int noise_its;
+
 
 // Calculation options.
 
@@ -58,6 +60,7 @@ extern bool find_overlap;
 extern bool dos;
 extern bool moments;
 extern bool corr_func;
+extern bool random_sim;
 extern bool keep_files;
 //extern bool time;
 

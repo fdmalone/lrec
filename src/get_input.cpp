@@ -18,6 +18,7 @@ bool dos = false;
 bool moments = false;
 bool corr_func = false;
 bool keep_files = false;
+bool random_sim = false;
 
 // Global data.
 // Some defaults.
@@ -32,12 +33,12 @@ double dos_step;
 double max_time;
 double time_step;
 double eta_g = 0.005;
-int N_its;
 int n_bits;
 int depth;
 int init_basis;
 cplxd initial_coeff;
 int overlap_depth;
+int noise_its;
 double noise_factor;
 
 void read_input(vector<string> &parsed, vector<double> &val, char *filename) {
@@ -108,6 +109,7 @@ void set_up_calc(vector<string> parsed) {
     corr_func = calc_present(parsed, "corr_func");
     fixed_ends = calc_present(parsed, "fixed_ends");
     keep_files = calc_present(parsed, "keep_files");
+    random_sim = calc_present(parsed, "random_sim");
 }
 
 void set_up_globals(vector<string> parsed, vector<double> val) {
@@ -122,13 +124,13 @@ void set_up_globals(vector<string> parsed, vector<double> val) {
     max_time = (int)val_present(parsed, val, "max_time");
     time_step = val_present(parsed, val, "time_step");
     eta_g = val_present(parsed, val, "eta_g");
-    N_its = (int)val_present(parsed, val, "N_its");
     n_bits = (int)val_present(parsed, val, "n_bits");
     depth = (int)val_present(parsed, val, "depth");
     init_basis = (int)val_present(parsed, val, "init_basis");
     initial_coeff = (cplxd)val_present(parsed, val, "initial_coeff");
     noise_factor = val_present(parsed, val, "noise_factor");
-    overlap_depth = val_present(parsed, val, "overlap_depth");
+    noise_its = (int)val_present(parsed, val, "noise_its");
+    overlap_depth = (int)val_present(parsed, val, "overlap_depth");
     max_time = val_present(parsed, val, "max_time");
     time_step = val_present(parsed, val, "time_step");
     n_states = (int)pow(2.0, n_sites);
@@ -143,7 +145,7 @@ void print_input() {
     cout << "Number of sites: " << n_sites << endl;
     cout << "Values of J_x, J_y, J_z: " << J[0] << "   " << J[1] << "   " << J[2] << endl;
     cout << "Number of states: " << n_states << endl;
-    cout << "Number of iterations " << N_its << endl;
+    cout << "Number of iterations " << noise_its << endl;
     cout << "Randomisation factor " << noise_factor << endl;
     cout << "Recursion depth " << depth << endl;
     cout << "Number of moments calculate: " << n_moments << endl;

@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <armadillo>
 #include <vector>
+#include <cmath>
 #include <stdint.h>
 #include "const.h"
 #include "read_vec.h"
@@ -73,6 +74,25 @@ void overlap_matrix(mat &overlap, uint16_t *configs, vector<double> gs_vec) {
         shift_a += lengths[i];
         shift_b = 0;
     }
+}
+
+void random_overlap(mat &overlap) {
+
+    mat av(depth, depth);
+    double r;
+    av = overlap;
+
+    for (int i = 0; i < noise_its; i++) {
+        for (int j = 0; j < overlap_depth; j++) {
+           r = (1 + ((double)rand()/RAND_MAX - 0.5)*noise_factor);
+           av(0,j) += overlap(0,j)*r;
+        }
+    }
+    //for (int i = 0; i < overlap_depth; i++) {
+    //    cout << i << "  " << av(0,i) <<"  " <<0.01*av(0,i) << endl;
+    //}
+    overlap = 1.0/(double)(noise_its+1) * av;
+
 }
 
 void dos_norm(double *a, double *b) {
@@ -156,7 +176,7 @@ void dos_mat(double *a_c, double *b_c, mat input) {
         ome += dos_step;
         jinv = inv(ome*omega - eta_g*I_c*omega-J);
         ds = 0.0;
-        for (int j = 0; j < depth; j++) {
+        for (int j = 0; j < overlap_depth; j++) {
             ds += jinv(j,0)*input(0,j);
         }
         out << setprecision(16) << ome << "  " << ds.imag() << endl;

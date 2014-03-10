@@ -31,7 +31,7 @@ double energy_noise(vector<double> input1, vector<double> input2, int it, double
 
 void exact_moments(double trans[], double mag[], int n);
 
-void calc_moments();
+void calc_moments(vector<double> &mom_vec);
 
 void correlation_function_exact(double trans[], double mag[]);
 
@@ -42,5 +42,7 @@ int count_non_zero(vec input);
 void non_zero_all(mat input, uint16_t *I, vec evec, double mag[]);
 
 void diag_heis(vector<double> &eigen, uint16_t *I);
+
+void correlation_function_moments(vector<double> mom_vec);
 
 #endif /* ED_HEIS_H */
