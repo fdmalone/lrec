@@ -17,6 +17,8 @@ void store_norm(vector<double> &norm, vector<double> p_N, vector<double> p_Nm, v
 
 void poly_rec(vector<double> &p_nmi, vector<double> &p_N, int p_depth, vector<double> a_n, vector<double> b_n);
 
-void poly_dos(vector<double> a, vector<double> b, vector<double> overlap);
+void poly_dos_ovlp(vector<double> a, vector<double> b, vector<double> overlap);
+
+void poly_dos(vector<double> a, vector<double> b, int p_depth);
 
 #endif /* POLY_H */

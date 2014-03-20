@@ -7,6 +7,8 @@
 #include "const.h"
 #include "read_vec.h"
 #include "recursion.h"
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 
 using namespace std;
 using namespace arma;
@@ -75,18 +77,31 @@ void overlap_matrix(vector<double> &overlap, uint16_t *configs, vector<double> g
 void random_overlap(vector<double> &overlap) {
 
     vector<double> av(depth);
-    double r;
+    //double r;
+    ofstream file;
+    file.open("overlap_err.dat");
+    const gsl_rng_type *T;
+    double gauss;
+    gsl_rng *r;
     av = overlap;
+    gsl_rng_env_setup();
+
+    T = gsl_rng_default;
+    r = gsl_rng_alloc(T);
 
     for (int i = 0; i < noise_its; i++) {
         for (int j = 0; j < overlap_depth; j++) {
-           r = (1 + ((double)rand()/RAND_MAX - 0.5)*noise_factor);
-           av[j] += overlap[j]*r;
+           //r =  (1 + ((double)rand()/RAND_MAX - 0.5)*noise_factor);
+           gauss = gsl_ran_gaussian(r, noise_factor);
+           file << setprecision(16) << overlap[j]*(1+gauss) << "  ";
+           av[j] += overlap[j]*(1+gauss);
         }
+        file << endl;
     }
     for (int i = 0; i < overlap_depth; i++) {
         overlap[i] = 1.0/(double)(noise_its + 1)*av[i];
     }
+    file.close();
 
 }
 

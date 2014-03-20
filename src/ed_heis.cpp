@@ -10,6 +10,7 @@
 #include <armadillo>
 #include "const.h"
 #include "bit_utils.h"
+#include "sorting.h"
 
 // Checked relative to Hande ED. Factor of 4 difference in eigenvalues.
 using namespace std;
@@ -183,45 +184,35 @@ int count_non_zero(vec input) {
 
 void non_zero_overlap(mat input, uint16_t *I, double diff[], double mag[]) {
 
-    uint16_t mask, tmp;
-    double factor[2] = {-1.0, 1.0}, res[n_states], norm = 0;
-    vec mod_vec, curr_vec, v_j;
-    curr_vec = input.col(0);
-    mod_vec = curr_vec;
+    uint16_t mask, tmp, new_conf;
+    double factor[2] = {-1.0, 1.0}, res[n_states], norm = 0, res_dub;
+    cplxd result;
+    cx_vec mod_vec, curr_vec, v_j;
+    curr_vec = conv_to<cx_vec>::from(input.col(0));
+    mod_vec = 0*curr_vec;
     mask = 1;
-
     // Work out sigma_0^z |Psi_0>.
-    //for (int i = 0; i < n_states; i++) {
-    //    tmp = I[i] & mask;
-    //    mod_vec[i] *= factor[tmp];
-    //}
+    for (int i = 0; i < n_states; i++) {
+        tmp = I[i] & mask;
+        new_conf = I[i] ^ xor_array[init_basis];
+        //cout << look_up_table(new_conf, I) << "  " << i <<"   "<< bitset<8>(I[i]) <<"  "<<spin_coeff[init_basis][tmp] << endl;
+        mod_vec[look_up_table(new_conf, I)] += spin_coeff[init_basis][tmp]*curr_vec[i];
+    }
 
-    ofstream trans, ms;
+    ofstream trans;
     trans.open("non_zero_open.dat");
-    ms.open("ms_0.dat");
 
     for (int i = 0; i < n_states; i++) {
-        v_j = input.col(i);
-        mod_vec = v_j;
-        for (int j = 0; j < n_states; j++) {
-            tmp = I[j] & mask;
-            mod_vec[j] *= factor[tmp];
-        }
-        res[i] = dot(curr_vec, mod_vec);
-        if (calc_ms(v_j, I) == 1) {
-            ms << i << "   " << 1 << "   " << count_non_zero(v_j) << "   " << dot(v_j, mod_vec) << endl;
-        }
-
+        v_j = conv_to<cx_vec>::from(input.col(i));
+        result = cdot(v_j, mod_vec);
+        //cout << result << endl;
+        res_dub = (conj(result)*result).real();
         trans << i << "  " << res[i]*res[i] << endl;
-        mag[i] = res[i]*res[i];
+        mag[i] = res_dub;
     }
-    for (int i = 0; i < n_states; i++) {
-        norm += res[i]*res[i];
-    }
-    //cout << "norm " <<"  " << norm << endl;
+
 
     trans.close();
-    ms.close();
 
     ofstream nz;
     nz.open("non_zero_freq.dat");
@@ -350,10 +341,94 @@ void exact_moments(double trans[], double mag[], int n) {
         for (int j = 0; j < n_states; j++) {
             mu_n += pow(trans[j], i)*mag[j];
         }
-        file << i << "   " << mu_n << endl;
+        file << i << "   " << setprecision(16) <<mu_n << endl;
     }
 
     file.close();
+
+}
+
+void calc_moments_poly() {
+
+    ifstream inp;
+    inp.open("poly_dos.dat");
+
+    double eigen, magn, mu_n;
+    vector<double> eig, mag;
+
+    while (inp >> eigen >> magn) {
+        eig.push_back(eigen);
+        mag.push_back(magn);
+    }
+
+    cout << "poly:@ "<< eig.size() << endl;
+    ofstream out;
+    out.open("calc_moments_poly.dat");
+
+    for (int j = 0; j < n_moments; j++) {
+        mu_n = 0;
+        for (int k = 0; k < eig.size(); k++) {
+             mu_n += pow(eig[k], j)*mag[k];
+        }
+        //mom_vec.push_back(mu_n);
+        //mav[j] += mu_n;
+        out << j << "  " << setprecision(16) << mu_n << endl;
+    }
+
+    out.close();
+
+    if (corr_func) {
+        correlation_function_calc(eig, mag);
+        //correlation_function_moments(mom_vec);
+    }
+
+}
+
+void conv_moments(vector<double> &a_c, vector<double> &b_c) {
+
+    ifstream inp;
+    inp.open("calc_moments_poly.dat");
+
+    int it;
+    double mom;
+    vector<double> moments;
+
+    while (inp >> it >> mom) {
+        moments.push_back(mom);
+    }
+
+    inp.close();
+
+    vector<double> M(depth), L(depth), M_mi, L_mi;
+
+    for (int i = 0; i < depth; i++) {
+        M_mi.push_back(pow(-1.0,i)*moments[i]);
+        L_mi.push_back(pow(-1.0,i+1)*moments[i+1]);
+    }
+    L[0] = L_mi[0];
+    M[0] = 1.0;
+
+    for (int i = 1; i < depth; i++) {
+        for (int j = i; j < depth-i+1; j++) {
+            M[j] = L_mi[j] - L_mi[i-1]*M_mi[j]/M_mi[i-1];
+        }
+        for (int j = i; j < depth-i+1; j++) {
+            L[j] = M[j+1]/M[i] - M_mi[j]/M_mi[i-1];
+        }
+        for (int j = 0; j < depth; j++) {
+            M_mi[j] = M[j];
+            L_mi[j] = L[j];
+        }
+    }
+
+    ofstream out;
+    out.open("cont_frac.dat");
+    for (int i = 0; i < depth/2; i++) {
+        a_c[i] = -1.0*L[i];
+        b_c[i] = sqrt(M[i]);
+        out << setprecision(16) << -1.0*L[i] << "  " << sqrt(M[i]) << endl;
+    }
+    out.close();
 
 }
 
@@ -404,7 +479,7 @@ void calc_moments(vector<double> &mom_vec) {
         }
         mom_vec.push_back(mu_n);
         //mav[j] += mu_n;
-        out << j << "  " << mu_n << endl;
+        out << j << "  " << setprecision(16) << mu_n << endl;
     }
 
     out.close();
@@ -415,6 +490,7 @@ void calc_moments(vector<double> &mom_vec) {
 
 
 }
+
 void diag_heis(vector<double> &eigen, uint16_t *I) {
 
     states(I);
@@ -434,7 +510,7 @@ void diag_heis(vector<double> &eigen, uint16_t *I) {
     double spec_diff[n_states], spec_amp[n_states];
 
     eig_sym(e_val, e_vec, H);
-    cout <<"Ground state energy: " << e_val(0) << endl;
+    cout <<"Ground state energy: " << e_val(0) << "  " << e_val(1)<< endl;
     gs = e_vec.col(0);
     //cout << e_vec.col(255) << endl;
     //cout << e_vec.col(21) << endl;
@@ -443,7 +519,7 @@ void diag_heis(vector<double> &eigen, uint16_t *I) {
     evalues = conv_to< vector<double> >::from(e_val);
     transition_freq(evalues, spec_diff);
     non_zero_overlap(e_vec, I, spec_diff, spec_amp);
-    non_zero_all(e_vec, I, e_val, spec_amp);
+    //non_zero_all(e_vec, I, e_val, spec_amp);
     exact_moments(spec_diff, spec_amp, n_moments);
     if (corr_func) {
         correlation_function_exact(spec_diff, spec_amp);

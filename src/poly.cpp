@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <math.h>
 #include <vector>
@@ -8,6 +9,7 @@
 using namespace std;
 
 int p_order;
+int length;
 
 void mult_const_array(vector<double> input, double mult) {
 
@@ -65,7 +67,7 @@ void poly_rec(vector<double> &p_nmi, vector<double> &p_N, int p_depth, vector<do
     mult_const_array(p_n, 0.0);
     mult_const_array(p_mi, 0.0);
     p_n[0] = 1.0;
-    if (p_depth == 0) {
+    if (p_depth == 1) {
         assign_array(p_nmi, p_mi);
         assign_array(p_N, p_n);
     }
@@ -82,7 +84,7 @@ void poly_rec(vector<double> &p_nmi, vector<double> &p_N, int p_depth, vector<do
         //cout << endl;
         assign_array(p_mi, p_n);
         assign_array(p_n, p_plus);
-        if (i == p_depth-2) {
+        if (i == p_depth - 2) {
             assign_array(p_nmi, p_mi);
             assign_array(p_N, p_plus);
         }
@@ -103,18 +105,20 @@ void poly_deriv(vector<double> &poly) {
 
 void store_norm(vector<double> &norm, vector<double> p_N, vector<double> p_Nm, vector<double> eig) {
 
-    for (int i = 0; i < depth; i++) {
+    for (int i = 0; i < length; i++) {
         norm[i] = gsl_poly_eval(&p_Nm[0], p_order, eig[2*i])*gsl_poly_eval(&p_N[0], p_order, eig[2*i]);
     }
 
 }
 
-void poly_dos(vector<double> a, vector<double> b, vector<double> overlap) {
+void poly_dos_ovlp(vector<double> a, vector<double> b, vector<double> overlap) {
 
+    length = depth;
     p_order = depth + 1;
-    vector<double> deriv(p_order), nminus(p_order);
+    vector<double> deriv(p_order), nminus(p_order), tmp(p_order);
     vector<double> norm(depth), p_n(p_order), g(depth), empty(p_order);
     vector<double> eigv(2*depth);
+    double dos_ij[p_order][depth];
 
     mult_const_array(g, 0.0);
     // need the n+1st coefficient, but can be arbitarily defined.
@@ -133,11 +137,17 @@ void poly_dos(vector<double> a, vector<double> b, vector<double> overlap) {
     store_norm(norm, deriv, nminus, eigv);
     // G_00 = sum_n G^_0n S_n0.
     // G^_0n(E) = sum_{\alpha} P_0(E_{\alpha}) * (E - E_{\alpha})^{-1} * P_n(E_{\alpha} / norm(E_{\alpha}).
+    double ome2;
     for (int i = 0; i < depth; i++) {
-        poly_rec(empty, p_n, i, a, b);
+        //cout << "overlap: " << overlap[i] << endl;
+        poly_rec(empty, p_n, i+1, a, b);
+        ome2 = 0.0;
         for (int j = 0; j < depth; j++) {
+            dos_ij[i][j] = gsl_poly_eval(&p_n[0], p_order, eigv[2*j])/norm[j];
             g[j] += gsl_poly_eval(&p_n[0], p_order, eigv[2*j])*overlap[i];
         }
+        tmp[i] = ome2;
+        //cout << "second moment " <<ome2 << endl;
     }
     // Normalise, no point in doing it many times.
     for (int i = 0; i < depth; i++) {
@@ -147,7 +157,59 @@ void poly_dos(vector<double> a, vector<double> b, vector<double> overlap) {
     ofstream file;
     file.open("poly_dos.dat");
     for (int i = 0; i < depth; i++) {
-        file << i << "  " << eigv[2*i] << "  " << g[i] << endl;
+        file << setprecision(16) << eigv[2*i] << "  " << g[i] << endl;
+    }
+
+    file.close();
+
+    ofstream file2;
+    file2.open("g0n_mom.dat");
+    double mu_n;
+    for (int i = 0; i < n_moments; i++) {
+        file2 << i << "  ";
+        for (int j = 0; j < depth; j++) {
+            mu_n = 0;
+            for (int k = 0; k < depth; k++) {
+                mu_n += pow(eigv[2*k], i)*dos_ij[j][k]*overlap[j];
+            }
+            file2 << mu_n << "   ";
+        }
+        file2 << endl;
+    }
+    file2.close();
+
+}
+
+void poly_dos(vector<double> a, vector<double> b, int p_depth) {
+
+    length = p_depth;
+    p_order = length + 1;
+
+    vector<double> deriv(p_order), nminus(p_order);
+    vector<double> norm(length), p_n(p_order), empty(p_order);
+    vector<double> eigv(2*length);
+
+    b.resize(length);
+    // need the n+1st coefficient, but can be arbitarily defined.
+    b.push_back(1);
+
+    print_array(b);
+    // Find P_N and P_{N-1}.
+    poly_rec(nminus, deriv, p_order, a, b);
+    //print_array(deriv);
+    // Find the roots of P_N, which are the eigenvalues of T.
+    gsl_poly_complex_workspace*w = gsl_poly_complex_workspace_alloc(p_order);
+    gsl_poly_complex_solve(&deriv[0], p_order, w, &eigv[0]);
+    gsl_poly_complex_workspace_free(w);
+    // Work out P'_N.
+    poly_deriv(deriv);
+    // Find P_{N-1}(E_{\alpha}) * P'_N(E_{\aplha}) and store in norm[E_{\alpha}.
+    store_norm(norm, deriv, nminus, eigv);
+
+    ofstream file;
+    file.open("poly_dos.dat");
+    for (int i = 0; i < length; i++) {
+        file << setprecision(16) << eigv[2*i] << "  " << 1.0/norm[i] << endl;
     }
     file.close();
 

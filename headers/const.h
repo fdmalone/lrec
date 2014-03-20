@@ -63,6 +63,30 @@ extern bool corr_func;
 extern bool random_sim;
 extern bool keep_files;
 extern bool poly_spec;
+extern bool convert_moments;
 //extern bool time;
+
+// Neighbours.
+enum nearest {
+    Left,
+    Right
+};
+
+// Bit masks.
+const uint16_t bit_mask = 0XF, on_site_mask = 3, nn_mask = 0XC;
+
+const uint16_t bit_cycle[2] = {1, 2};
+
+const int n_neigh[2] = {Left, Right};
+// xor_array:
+// arranged: {I, sx, sy, sz}
+// sx and sy flip bits.
+const uint16_t xor_array[4] = {0,1,1,0};
+// spin_coeff:
+// arranged as above for rows, columns = {down, up} to conincide with
+// definition of basis in exact diagonalisation i.e. 0 = down.
+// These are the coefficintes which result from acting on an up or
+// down with one of the four matrices.
+const cplxd spin_coeff[4][2] = {{1.0,1.0},{1.0,1.0},{-I_c,I_c},{-1.0,1.0}};
 
 #endif /* CONST_H */

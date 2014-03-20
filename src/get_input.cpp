@@ -20,6 +20,7 @@ bool corr_func = false;
 bool keep_files = false;
 bool random_sim = false;
 bool poly_spec = false;
+bool convert_moments = false;
 
 // Global data.
 // Some defaults.
@@ -81,7 +82,7 @@ void read_input(vector<string> &parsed, vector<double> &val, char *filename) {
 bool calc_present(vector<string> parsed, string input) {
 
     for (int i = 0; i < parsed.size(); i++) {
-        if (parsed[i].find(input) != std::string::npos) {
+        if (parsed[i].find(input) != std::string::npos && (parsed[i].compare(input) == 0)) {
             return true;
         }
     }
@@ -113,6 +114,7 @@ void set_up_calc(vector<string> parsed) {
     keep_files = calc_present(parsed, "keep_files");
     random_sim = calc_present(parsed, "random_sim");
     poly_spec = calc_present(parsed, "poly_spec");
+    convert_moments = calc_present(parsed, "convert_moments");
 
 }
 
@@ -152,7 +154,8 @@ void print_input() {
     cout << "Number of iterations: " << noise_its << endl;
     cout << "Randomisation factor: " << noise_factor << endl;
     cout << "Recursion depth: " << depth << endl;
-    cout << "Number of moments calculate: " << n_moments << endl;
+    cout << "Number of moments calculate: " << moments << "   " << n_moments << endl;
+    cout << "Generating spectral function graph: " << dos << endl;
     cout << "Spectral resolution: " << dos_step << endl;
     cout << "Spectral width: " << abs(2*omega) << endl;
     cout << "Correlation function: " << corr_func << "  " << max_time/time_step << "   " << max_time << "  " << time_step << endl;

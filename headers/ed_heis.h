@@ -31,6 +31,8 @@ double energy_noise(vector<double> input1, vector<double> input2, int it, double
 
 void exact_moments(double trans[], double mag[], int n);
 
+void conv_moments(vector<double> &a_c, vector<double> &b_c);
+
 void calc_moments(vector<double> &mom_vec);
 
 void correlation_function_exact(double trans[], double mag[]);
@@ -38,6 +40,8 @@ void correlation_function_exact(double trans[], double mag[]);
 void correlation_function_calc(vector<double> trans, vector<double> mag);
 
 int count_non_zero(vec input);
+
+void calc_moments_poly();
 
 void non_zero_all(mat input, uint16_t *I, vec evec, double mag[]);
 

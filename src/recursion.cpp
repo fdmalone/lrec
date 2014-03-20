@@ -13,28 +13,6 @@
 using namespace std;
 using namespace arma;
 
-// Neighbours.
-enum nearest {
-    Left,
-    Right
-};
-
-// Bit masks.
-uint16_t bit_mask = 0XF, on_site_mask = 3, nn_mask = 0XC;
-
-uint16_t bit_cycle[2] = {1, 2};
-
-int n_neigh[2] = {Left, Right};
-// xor_array:
-// arranged: {I, sx, sy, sz}
-// sx and sy flip bits.
-uint16_t xor_array[4] = {0,1,1,0};
-// spin_coeff:
-// arranged as above for rows, columns = {down, up} to conincide with
-// definition of basis in exact diagonalisation i.e. 0 = down.
-// These are the coefficintes which result from acting on an up or
-// down with one of the four matrices.
-cplxd spin_coeff[4][2] = {{1.0,1.0},{1.0,1.0},{-I_c,I_c},{-1.0,1.0}};
 
 // reduntant.
 void insert_element(vector<uint16_t> &a, int pos, int res, int max, uint16_t val) {
@@ -499,20 +477,19 @@ void commute_wrapper_inf(vector<double> &cf_a, vector<double> &cf_b) {
         cout <<dep << "   " <<lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
         cf_a[dep] = lanc_a[dep];
         if (check.real() < 0) {
-            // cout << "imag" << endl;
             break;
         }
-        lanc_b[dep+1] = sqrt(check.real());
-        cf_b[dep+1] = lanc_b[dep+1];
         file1 << bit_str_0.size() << endl;
         for (int iter = 0; iter < bit_str_0.size(); iter++) {
             file2 << bit_str_0[iter] << endl;
             file3 << setprecision(16) << coeff_array_0[iter] << endl;
         }
-        if (abs(lanc_b[dep+1]) < de) {
-            cout << "terminated"<< "  " << dep << endl;
+        if (abs(check.real()) < de || dep + 1 == depth) {
+            cout << "terminated"<< "  " << dep <<"  " << depth << endl;
             break;
         }
+        lanc_b[dep+1] = sqrt(check.real());
+        cf_b[dep+1] = lanc_b[dep+1];
         divide_c(coeff_array_i, lanc_b[dep+1]);
         remove_zeros(bit_str_i, coeff_array_i);
         bit_str_old = bit_str_0;
