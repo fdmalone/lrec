@@ -5,6 +5,7 @@
 #include <complex>
 #include <stdint.h>
 #include <fstream>
+#include <bitset>
 #include <armadillo>
 #include "const.h"
 #include "bit_utils.h"
@@ -38,13 +39,17 @@ void divide(vector<double> &input, double divisor) {
     for (int i = 0; i < input.size(); i++ ) {
         input[i] = input[i]/divisor;
     }
+
 }
+
 void divide_c(vector<cplxd> &input, double divisor) {
 
     for (int i = 0; i < input.size(); i++ ) {
         input[i] = input[i]/divisor;
     }
+
 }
+
 double inf_trace(vector<uint16_t> bit_str_a, vector<uint16_t> bit_str_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b) {
 
     // Infinite temperature inner product.
@@ -58,15 +63,25 @@ double inf_trace(vector<uint16_t> bit_str_a, vector<uint16_t> bit_str_b, vector<
     //   trace: infinite temperature trace.
 
     int i, j;
-    cplxd trace;
+    cplxd trace = 0.0;
 
-    for (i = 0; i < bit_str_a.size(); i++) {
-        for (j =0 ; j < bit_str_b.size(); j++) {
-            if (bit_str_a[i] == bit_str_b[j]) {
-                trace += conj(coeff_a[i])*coeff_b[j];
-            }
+    i = 0;
+    j = 0;
+
+    do {
+        if (bit_str_a[i] == bit_str_b[j]) {
+            trace += conj(coeff_a[i])*coeff_b[j];
+            i++;
+            j++;
         }
-    }
+        else if (bit_str_a[i] > bit_str_b[j]) {
+            i++;
+        }
+        else {
+            j++;
+        }
+    } while (i < bit_str_a.size() && j < bit_str_b.size());
+
     return(trace.real());
 }
 
@@ -474,7 +489,7 @@ void commute_wrapper_inf(vector<double> &cf_a, vector<double> &cf_b) {
         merge_lists(bit_str_i, bit_str_old, coeff_array_i, coeff_array_old, -1.0*lanc_b[dep]);
         // b_{i+1} = Tr(V_{i+1}, V_{i+1})
         check = inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i);
-        cout <<dep << "   " <<lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
+        cout << "recr: " << dep << "   " <<lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep] << endl;
         cf_a[dep] = lanc_a[dep];
         if (check.real() < 0) {
             break;
