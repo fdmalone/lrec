@@ -143,6 +143,7 @@ void set_up_globals(vector<string> parsed, vector<double> val) {
     dos_step = abs(2*omega)/dos_its;
 
 }
+
 void print_input() {
 
     cout << "Peforming recursion method." << endl;
@@ -164,13 +165,42 @@ void print_input() {
 
 }
 
-void set_up_system(char *filename) {
+int set_up_chain() {
+
+    if (n_sites % 8 != 0 || n_sites > 32) {
+        cout << "Chain length is not a multiple of 8 or exceeds max chain length of 32 sites." << endl;
+        return 1;
+    }
+    else {
+        if (n_sites == 8) {
+            typedef uint16_t bitint;
+        }
+        else if (n_sites == 16) {
+            typedef uint16_t bitint;
+        }
+        else if (n_sites == 32) {
+            typedef uint32_t bitint;
+        }
+        else {
+            typedef uint64_t bitint;
+        }
+        return 0;
+    }
+
+}
+
+int set_up_system(char *filename) {
 
     vector<double> values;
     vector<string> calc_type;
     read_input(calc_type, values, filename);
     set_up_calc(calc_type);
     set_up_globals(calc_type, values);
-    print_input();
+    if (set_up_chain() == 1) {
+        return 1;
+    }
+    else {
+        print_input();
+    }
 
 }

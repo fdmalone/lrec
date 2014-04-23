@@ -5,7 +5,11 @@
 #include <stdint.h>
 
 // Some typedefs.
+// stupid long name.
 typedef std::complex<double> cplxd;
+// Arbitrary length.
+typedef uint8_t bitint;
+
 
 // Actual constants.
 const double de = 1e-16;

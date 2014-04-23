@@ -12,6 +12,8 @@ using namespace std;
 
 void calc_type() {
 
+    bitint that;
+    cout << "integer size" << sizeof(that) << endl;
     if (recursion) {
         vector<double> cf_a(depth), cf_b(depth);
         if (T0 || find_overlap) {
@@ -90,10 +92,12 @@ void finish_calc() {
 
 void do_calc(char *filename) {
 
-   set_up_system(filename);
-
-   calc_type();
-   finish_calc();
-   cout << "DELETED FILES" << endl;
+    if (set_up_system(filename) == 1) {
+       cout << "Input error terminating calculation." << endl;
+    }
+    else {
+        calc_type();
+        finish_calc();
+    }
 
 }
