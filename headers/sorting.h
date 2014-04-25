@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include "const.h"
 
 using namespace std;
 
@@ -10,8 +11,8 @@ using namespace std;
 int permute(int a, int b, double &sign);
 int permute_norm(int a, int b, double &sign);
 int insertion_sort(int array[], int lenght);
-int insertion_rank(uint16_t array[], uint16_t rank[], int length);
-int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos);
-int look_up_table(uint16_t input, uint16_t arr[]);
+int insertion_rank(bitint array[], bitint rank[], int length);
+int binary_search(vector<bitint> &a, int min, int max, bitint val, int &pos);
+int look_up_table(bitint input, bitint arr[]);
 
 #endif /* SORTING_H */

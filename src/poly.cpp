@@ -139,7 +139,7 @@ void poly_dos_ovlp(vector<double> a, vector<double> b, vector<double> overlap) {
     // G^_0n(E) = sum_{\alpha} P_0(E_{\alpha}) * (E - E_{\alpha})^{-1} * P_n(E_{\alpha} / norm(E_{\alpha}).
     double ome2;
     for (int i = 0; i < depth; i++) {
-        //cout << "overlap: " << overlap[i] << endl;
+        cout << "overlap: " << overlap[i] << endl;
         poly_rec(empty, p_n, i+1, a, b);
         ome2 = 0.0;
         for (int j = 0; j < depth; j++) {
@@ -161,7 +161,7 @@ void poly_dos_ovlp(vector<double> a, vector<double> b, vector<double> overlap) {
     }
 
     file.close();
-
+    /*
     ofstream file2;
     file2.open("g0n_mom.dat");
     double mu_n;
@@ -177,6 +177,7 @@ void poly_dos_ovlp(vector<double> a, vector<double> b, vector<double> overlap) {
         file2 << endl;
     }
     file2.close();
+    */
 
 }
 

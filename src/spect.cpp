@@ -52,10 +52,10 @@ double continued_fraction(vector<double> a, vector<double> b) {
 
 }
 
-void overlap_matrix(vector<double> &overlap, uint16_t *configs, vector<double> gs_vec) {
+void overlap_matrix(vector<double> &overlap, bitint *configs, vector<double> gs_vec) {
 
     vector<int> lengths;
-    vector<uint16_t> bas_el, tmp_el_a, tmp_el_b;
+    vector<bitint> bas_el, tmp_el_a, tmp_el_b;
     vector<cplxd> bas_coeff, tmp_coeff_a, tmp_coeff_b;
     int shift_a, shift_b;
 
@@ -100,6 +100,7 @@ void random_overlap(vector<double> &overlap) {
     }
     for (int i = 0; i < overlap_depth; i++) {
         overlap[i] = 1.0/(double)(noise_its + 1)*av[i];
+        cout << overlap[i] << endl;
     }
     file.close();
 

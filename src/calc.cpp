@@ -12,15 +12,13 @@ using namespace std;
 
 void calc_type() {
 
-    bitint that;
-    cout << "integer size" << sizeof(that) << endl;
     if (recursion) {
         vector<double> cf_a(depth), cf_b(depth);
         if (T0 || find_overlap) {
             vector<double> ground_state;
             vector<double> ovlp(depth);
-            uint16_t *configs;
-            configs = new uint16_t[n_states];
+            bitint *configs;
+            configs = new bitint[n_states];
             diag_heis(ground_state, configs);
             if (find_overlap) {
                 commute_wrapper_inf(cf_a, cf_b);

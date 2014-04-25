@@ -7,9 +7,19 @@
 // Some typedefs.
 // stupid long name.
 typedef std::complex<double> cplxd;
-// Arbitrary length.
-typedef uint8_t bitint;
 
+#if LATTICE==4
+    typedef uint8_t bitint;
+#elif LATTICE==8
+    typedef uint16_t bitint;
+#elif LATTICE==16
+    typedef uint32_t bitint;
+#elif LATTICE==32
+    typedef uint64_t bitint;
+#else
+    #error NEED TO DEFINE THE LATTICE SIZE AT COMPILE TIME. CURRENTLY \
+           ALLOWED VALUES ARE 4, 8, 16, 32. COMPILE WITH -DDET_SIZE=LENGTH.
+#endif
 
 // Actual constants.
 const double de = 1e-16;
@@ -77,15 +87,15 @@ enum nearest {
 };
 
 // Bit masks.
-const uint16_t bit_mask = 0XF, on_site_mask = 3, nn_mask = 0XC;
+const bitint bit_mask = 0XF, on_site_mask = 3, nn_mask = 0XC;
 
-const uint16_t bit_cycle[2] = {1, 2};
+const bitint bit_cycle[2] = {1, 2};
 
 const int n_neigh[2] = {Left, Right};
 // xor_array:
 // arranged: {I, sx, sy, sz}
 // sx and sy flip bits.
-const uint16_t xor_array[4] = {0,1,1,0};
+const bitint xor_array[4] = {0,1,1,0};
 // spin_coeff:
 // arranged as above for rows, columns = {down, up} to conincide with
 // definition of basis in exact diagonalisation i.e. 0 = down.

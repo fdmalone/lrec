@@ -6,10 +6,11 @@
 #include <vector>
 #include <complex>
 #include <fstream>
+#include "const.h"
 
 using namespace std;
 
-void read_output(vector<int> &lengths, vector<uint16_t> &bas_el_d, vector<complex <double> > &bas_coeff_d) {
+void read_output(vector<int> &lengths, vector<bitint> &bas_el_d, vector<complex <double> > &bas_coeff_d) {
 
     ifstream input_basis, input_coeffs, input_lengths;
 
@@ -18,7 +19,7 @@ void read_output(vector<int> &lengths, vector<uint16_t> &bas_el_d, vector<comple
     input_lengths.open("basis_lengths.dat");
 
     int inp, num_el = 0;
-    uint16_t bas;
+    bitint bas;
     complex<double> coeff;
 
     while (input_lengths >> inp) {
@@ -31,7 +32,7 @@ void read_output(vector<int> &lengths, vector<uint16_t> &bas_el_d, vector<comple
     for (int i = 0; i < num_el; i++) {
         input_basis >> bas;
         input_coeffs >> coeff;
-        bas = (uint16_t)bas;
+        bas = (bitint)bas;
         coeff = (complex<double>)coeff;
         bas_el_d.push_back(bas);
         bas_coeff_d.push_back(coeff);

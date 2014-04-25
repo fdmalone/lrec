@@ -2,12 +2,13 @@
 #define BIT_UTILS_H
 
 #include <iostream>
-#include <stdint.h>
+#include <const.h>
+
 // Bit Manipulation.
-uint16_t rotl(uint16_t x, int n);
-uint16_t rotr(uint16_t x, int n);
+bitint rotl(bitint x, int n);
+bitint rotr(bitint x, int n);
 // Bit twiddling hacks
-uint16_t swap_bits(uint16_t x);
-int count_bits(uint16_t x);
+bitint swap_bits(bitint x);
+int count_bits(bitint x);
 
 #endif /* BIT_UTILS_H */

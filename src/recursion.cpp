@@ -16,7 +16,7 @@ using namespace arma;
 
 
 // reduntant.
-void insert_element(vector<uint16_t> &a, int pos, int res, int max, uint16_t val) {
+void insert_element(vector<bitint> &a, int pos, int res, int max, bitint val) {
 
     int i, k;
 
@@ -50,7 +50,7 @@ void divide_c(vector<cplxd> &input, double divisor) {
 
 }
 
-double inf_trace(vector<uint16_t> bit_str_a, vector<uint16_t> bit_str_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b) {
+double inf_trace(vector<bitint> bit_str_a, vector<bitint> bit_str_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b) {
 
     // Infinite temperature inner product.
     // For Heisenberg model Tr(sigma_i^{\alpha}sigma_j^{\beta}) = \delta_{i,j}\delta^{\alpha,\beta}.
@@ -85,11 +85,11 @@ double inf_trace(vector<uint16_t> bit_str_a, vector<uint16_t> bit_str_b, vector<
     return(trace.real());
 }
 
-cplxd gs_trace(vector<uint16_t> input_a, vector<uint16_t> input_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b, uint16_t *ground_state, vector<double> gs_coeff) {
+cplxd gs_trace(vector<bitint> input_a, vector<bitint> input_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b, bitint *ground_state, vector<double> gs_coeff) {
 
     int i, j, k;
     int tmp_el, bit;
-    uint16_t onsite_sigma_a, onsite_sigma_b, onsite_sigma, basis_element;
+    bitint onsite_sigma_a, onsite_sigma_b, onsite_sigma, basis_element;
     cplxd trace = 0;
     double sgn;
     cplxd reduced_coeff, basis_coeff;
@@ -129,7 +129,7 @@ cplxd gs_trace(vector<uint16_t> input_a, vector<uint16_t> input_b, vector<cplxd>
     }
 }
 
-void merge_lists(vector<uint16_t> &bit_str_new, vector<uint16_t> bit_str_old, vector<cplxd> &coeff_new, vector<cplxd> coeff_old, double mult_a) {
+void merge_lists(vector<bitint> &bit_str_new, vector<bitint> bit_str_old, vector<cplxd> &coeff_new, vector<cplxd> coeff_old, double mult_a) {
 
     // Merge two sorted lists. Makes use of binary searching, very similar to annihlation in HANDE.
 
@@ -161,7 +161,7 @@ void merge_lists(vector<uint16_t> &bit_str_new, vector<uint16_t> bit_str_old, ve
     }
 }
 
-void add_new_bit_str(uint16_t bits[], cplxd coeffs[], uint16_t rank[], int length, vector<uint16_t> &bit_str_mod, vector<cplxd> &coeff_mod, int &max) {
+void add_new_bit_str(bitint bits[], cplxd coeffs[], bitint rank[], int length, vector<bitint> &bit_str_mod, vector<cplxd> &coeff_mod, int &max) {
 
     // If bit string is already present in list add coefficients else need to insert new bit string in appropriate position in list.
     int i;
@@ -191,7 +191,7 @@ void add_new_bit_str(uint16_t bits[], cplxd coeffs[], uint16_t rank[], int lengt
     }
 }
 
-uint16_t merge_bits(uint16_t mod_bits, uint16_t inp_bit_str, int pos, int nn) {
+bitint merge_bits(bitint mod_bits, bitint inp_bit_str, int pos, int nn) {
 
     // Merge bits which are the results of [H, local_bits] back into original string.
 
@@ -219,7 +219,7 @@ uint16_t merge_bits(uint16_t mod_bits, uint16_t inp_bit_str, int pos, int nn) {
 
 }
 
-uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coeff, int iter, int pos, int nn) {
+bitint comm_bits(bitint onsite_bit_str, bitint nn_bit_str, cplxd &curr_coeff, int iter, int pos, int nn) {
 
     // Commute active bits with the Hamiltonian. This is slightly subtle for a number of reasons.
 
@@ -234,7 +234,7 @@ uint16_t comm_bits(uint16_t onsite_bit_str, uint16_t nn_bit_str, cplxd &curr_coe
 
     int i;
     double sgn;
-    uint16_t sigma_nn = 0, onsite_tmp, tmp_nn;
+    bitint sigma_nn = 0, onsite_tmp, tmp_nn;
     cplxd I(0.0,1.0), onsite_coeff;
 
     // Perform commutation.
@@ -303,7 +303,7 @@ int boundary(int pos, int nn) {
     }
 }
 
-void remove_zeros(vector<uint16_t> &input, vector<cplxd> &coeffs) {
+void remove_zeros(vector<bitint> &input, vector<cplxd> &coeffs) {
 
     // Removed basis elements from list which have zero coefficient.
 
@@ -322,7 +322,7 @@ void remove_zeros(vector<uint16_t> &input, vector<cplxd> &coeffs) {
 
 }
 
-void commute_wrapper(vector<double> ground_state, uint16_t *configs, vector<double> &cf_a, vector<double> &cf_b) {
+void commute_wrapper(vector<double> ground_state, bitint *configs, vector<double> &cf_a, vector<double> &cf_b) {
 
     ofstream file1, file2, file3;
     file1.open("basis_lengths.dat");
@@ -330,12 +330,12 @@ void commute_wrapper(vector<double> ground_state, uint16_t *configs, vector<doub
     file3.open("basis_coeffs.dat");
 
     int bits, pos, nn, sig, i, num_bit_str, disp_start, disp_end, dep, disp, shift, max;
-    uint16_t rank[4];
-    uint16_t onsite_bits, nn_bits;
-    uint16_t new_bits, bits_sig[4];
+    bitint rank[4];
+    bitint onsite_bits, nn_bits;
+    bitint new_bits, bits_sig[4];
     double lanc_a[1000], lanc_b[1000], J = 1.0, delta;
     cplxd new_coeff, tmp_coeff, coeff_sig[4], check = 0;
-    vector<uint16_t> bit_str_0, bit_str_i, bit_str_old;
+    vector<bitint> bit_str_0, bit_str_i, bit_str_old;
     vector<cplxd> coeff_array_0, coeff_array_i, coeff_array_old;
     bit_str_0.push_back(init_basis);
     coeff_array_0.push_back(initial_coeff);
@@ -429,12 +429,12 @@ void commute_wrapper_inf(vector<double> &cf_a, vector<double> &cf_b) {
     file3.open("basis_coeffs.dat");
 
     int bits, pos, nn, sig, i, num_bit_str, disp_start, disp_end, dep, disp, shift, max;
-    uint16_t rank[4];
-    uint16_t onsite_bits, nn_bits;
-    uint16_t new_bits, bits_sig[4];
+    bitint rank[4];
+    bitint onsite_bits, nn_bits;
+    bitint new_bits, bits_sig[4];
     double lanc_a[1000], lanc_b[1000], delta;
     cplxd new_coeff, tmp_coeff, coeff_sig[4], check = 0;
-    vector<uint16_t> bit_str_0, bit_str_i, bit_str_old;
+    vector<bitint> bit_str_0, bit_str_i, bit_str_old;
     vector<cplxd> coeff_array_0, coeff_array_i, coeff_array_old;
 
     bit_str_0.push_back(init_basis);

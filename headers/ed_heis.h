@@ -3,25 +3,26 @@
 
 #include <armadillo>
 #include <vector>
+#include "const.h"
 
 using namespace std;
 using namespace arma;
 
-int look_up(uint16_t *I, uint16_t);
+int look_up(bitint *I, bitint);
 
-double h_zz(uint16_t *I, uint16_t state);
+double h_zz(bitint *I, bitint state);
 
-void hamiltonian(mat &H, uint16_t *I);
+void hamiltonian(mat &H, bitint *I);
 
-int calc_ms(vector<double> input, uint16_t *I);
+int calc_ms(vector<double> input, bitint *I);
 
-int count_bits(uint16_t inp);
+int count_bits(bitint inp);
 
-void states(uint16_t *I);
+void states(bitint *I);
 
 void transition_freq(vector<double> input, double diff[]);
 
-void non_zero_overlap(mat input, uint16_t *I, double diff[], double mag[]);
+void non_zero_overlap(mat input, bitint *I, double diff[], double mag[]);
 
 double vec_noise(vector<double> &input1, vector<double> &input2, double factor);
 
@@ -43,9 +44,9 @@ int count_non_zero(vec input);
 
 void calc_moments_poly();
 
-void non_zero_all(mat input, uint16_t *I, vec evec, double mag[]);
+void non_zero_all(mat input, bitint *I, vec evec, double mag[]);
 
-void diag_heis(vector<double> &eigen, uint16_t *I);
+void diag_heis(vector<double> &eigen, bitint *I);
 
 void correlation_function_moments(vector<double> mom_vec);
 

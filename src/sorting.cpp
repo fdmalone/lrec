@@ -94,7 +94,7 @@ int permute_norm(int a, int b, double &sign) {
 
 // Sorting / utils
 // should be void.
-int insertion_rank(uint16_t array[], uint16_t rank[], int length) {
+int insertion_rank(bitint array[], bitint rank[], int length) {
 
     // Rank an array in increasing order result is rank which contains indices or ranked array elements.
 
@@ -120,7 +120,7 @@ int insertion_rank(uint16_t array[], uint16_t rank[], int length) {
         rank[j+1] = tmp;
     }
 }
-int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos) {
+int binary_search(vector<bitint> &a, int min, int max, bitint val, int &pos) {
 
     // Search for position in sorted list for elements.
     // If it's not in the list then we find the best place to put it. Source: HANDE.
@@ -179,7 +179,7 @@ int binary_search(vector<uint16_t> &a, int min, int max, uint16_t val, int &pos)
         }
     }
 }
-int look_up_table(uint16_t input, uint16_t arr[]) {
+int look_up_table(bitint input, bitint arr[]) {
 
     for (int i = 0; i < n_states; i++) {
         if (arr[i] == input) {

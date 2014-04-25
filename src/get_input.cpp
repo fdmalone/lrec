@@ -173,10 +173,10 @@ int set_up_chain() {
     }
     else {
         if (n_sites == 8) {
-            typedef uint16_t bitint;
+            typedef bitint bitint;
         }
         else if (n_sites == 16) {
-            typedef uint16_t bitint;
+            typedef bitint bitint;
         }
         else if (n_sites == 32) {
             typedef uint32_t bitint;

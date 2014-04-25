@@ -20,7 +20,7 @@ mat H;
 vec e_val;
 int bound;
 
-int look_up(uint16_t *I, uint16_t state) {
+int look_up(bitint *I, bitint state) {
 
     for (int i = 0; i < n_states; i++) {
         if (I[i] == state) {
@@ -29,7 +29,7 @@ int look_up(uint16_t *I, uint16_t state) {
     }
 }
 
-double h_zz(uint16_t *I, uint16_t input) {
+double h_zz(bitint *I, bitint input) {
 
     int bit_i, bit_j;
     double sz = 0;
@@ -44,10 +44,10 @@ double h_zz(uint16_t *I, uint16_t input) {
 
 }
 
-void hamiltonian(mat &H, uint16_t *I) {
+void hamiltonian(mat &H, bitint *I) {
 
     int bit_i, bit_j, mask;
-    uint16_t K, L;
+    bitint K, L;
 
     for (int i = 0; i < n_states; i++) {
         // Diagonal.
@@ -65,7 +65,7 @@ void hamiltonian(mat &H, uint16_t *I) {
     }
 }
 
-int calc_ms(vec input, uint16_t *I) {
+int calc_ms(vec input, bitint *I) {
 
     int count1 = 0, count2 = 0;
 
@@ -87,7 +87,7 @@ int calc_ms(vec input, uint16_t *I) {
 
 }
 
-void states(uint16_t *I) {
+void states(bitint *I) {
 
     int r = 0;
 
@@ -182,9 +182,9 @@ int count_non_zero(vec input) {
 
 }
 
-void non_zero_overlap(mat input, uint16_t *I, double diff[], double mag[]) {
+void non_zero_overlap(mat input, bitint *I, double diff[], double mag[]) {
 
-    uint16_t mask, tmp, new_conf;
+    bitint mask, tmp, new_conf;
     double factor[2] = {-1.0, 1.0}, res[n_states], norm = 0, res_dub;
     cplxd result;
     cx_vec mod_vec, curr_vec, v_j;
@@ -225,10 +225,10 @@ void non_zero_overlap(mat input, uint16_t *I, double diff[], double mag[]) {
 
 }
 
-void non_zero_all(mat input, uint16_t *I, vec evec, double mag[]) {
+void non_zero_all(mat input, bitint *I, vec evec, double mag[]) {
 
     int it = 0;
-    uint16_t mask, tmp;
+    bitint mask, tmp;
     double factor[2] = {-1.0, 1.0}, norm = 0;
     double res[n_states*n_states], prod;
     vec mod_vec, curr_vec, v_j;
@@ -491,7 +491,7 @@ void calc_moments(vector<double> &mom_vec) {
 
 }
 
-void diag_heis(vector<double> &eigen, uint16_t *I) {
+void diag_heis(vector<double> &eigen, bitint *I) {
 
     states(I);
     H.zeros(n_states, n_states);
