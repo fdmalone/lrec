@@ -149,8 +149,8 @@ void print_input() {
         cout << "Starting vector: " << init_basis << endl;
         cout << "Fixed end boundary conditions: " << boolalpha <<fixed_ends << endl;
         cout << "Number of sites: " << n_sites << endl;
-        cout << "Lattice size compiled with: " << pow(2.0, sizeof(bit_mask)+1) << endl;
-        if ((int)pow(2.0, sizeof(bit_mask)+1) != n_sites) cout << "CONFLICT IN LATTICE SIZE." << endl;
+        cout << "Lattice size compiled with: " << 4*sizeof(bit_mask) << endl;
+        if (4*sizeof(bit_mask) != n_sites) cout << "CONFLICT IN LATTICE SIZE." << endl;
         cout << "Values of J_x, J_y, J_z: " << J[0] << "   " << J[1] << "   " << J[2] << endl;
         cout << "Number of states: " << n_states << endl;
         cout << "Recursion depth: " << depth << endl;
