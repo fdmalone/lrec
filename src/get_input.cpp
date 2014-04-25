@@ -183,21 +183,6 @@ int set_up_chain() {
         cout << "Chain length is not a multiple of 8 or exceeds max chain length of 32 sites." << endl;
         return 1;
     }
-    else {
-        if (n_sites == 8) {
-            typedef bitint bitint;
-        }
-        else if (n_sites == 16) {
-            typedef bitint bitint;
-        }
-        else if (n_sites == 32) {
-            typedef uint32_t bitint;
-        }
-        else {
-            typedef uint64_t bitint;
-        }
-        return 0;
-    }
 
 }
 
