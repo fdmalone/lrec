@@ -53,8 +53,6 @@ extern int depth;
 // Initial basis operator.
 extern int init_basis;
 extern cplxd initial_coeff;
-// How many overlap matrix elements we want to use.
-extern int overlap_depth;
 // Randomisation strength.
 extern double noise_factor;
 // Number of iterations for random noise calculations, monte carlo steps effectively.

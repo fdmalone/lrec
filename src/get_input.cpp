@@ -39,7 +39,6 @@ int n_bits;
 int depth;
 int init_basis;
 cplxd initial_coeff;
-int overlap_depth;
 int noise_its;
 double noise_factor;
 
@@ -136,7 +135,6 @@ void set_up_globals(vector<string> parsed, vector<double> val) {
     initial_coeff = (cplxd)val_present(parsed, val, "initial_coeff");
     noise_factor = val_present(parsed, val, "noise_factor");
     noise_its = (int)val_present(parsed, val, "noise_its");
-    overlap_depth = (int)val_present(parsed, val, "overlap_depth");
     max_time = val_present(parsed, val, "max_time");
     time_step = val_present(parsed, val, "time_step");
     n_states = (int)pow(2.0, n_sites);
