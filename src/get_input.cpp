@@ -35,7 +35,7 @@ double dos_step;
 double max_time;
 double time_step;
 double eta_g = 0.005;
-int n_bits;
+int n_bits = 2*4*sizeof(bit_mask);
 int depth;
 int init_basis;
 cplxd initial_coeff;
@@ -129,7 +129,6 @@ void set_up_globals(vector<string> parsed, vector<double> val) {
     max_time = (int)val_present(parsed, val, "max_time");
     time_step = val_present(parsed, val, "time_step");
     eta_g = val_present(parsed, val, "eta_g");
-    n_bits = (int)val_present(parsed, val, "n_bits");
     depth = (int)val_present(parsed, val, "depth");
     init_basis = (int)val_present(parsed, val, "init_basis");
     initial_coeff = (cplxd)val_present(parsed, val, "initial_coeff");
@@ -147,10 +146,15 @@ void print_input() {
     if (recursion) {
         cout << "Peforming recursion method." << endl;
         cout << "Starting vector: " << init_basis << endl;
-        cout << "Fixed end boundary conditions: " << boolalpha <<fixed_ends << endl;
+        if (fixed_ends) {
+            cout << "Using fixed end boundary conditions." << endl;
+        }
+        else {
+            cout << "Using periodic boundary conditions." << endl;
+        }
         cout << "Number of sites: " << n_sites << endl;
-        cout << "Lattice size compiled with: " << 4*sizeof(bit_mask) << endl;
-        if (4*sizeof(bit_mask) != n_sites) cout << "CONFLICT IN LATTICE SIZE." << endl;
+        cout << "Lattice size compiled with: " << n_bits/2 << endl;
+        if (n_bits/2 != n_sites) cout << "CONFLICT IN LATTICE SIZE." << endl;
         cout << "Values of J_x, J_y, J_z: " << J[0] << "   " << J[1] << "   " << J[2] << endl;
         cout << "Number of states: " << n_states << endl;
         cout << "Recursion depth: " << depth << endl;
