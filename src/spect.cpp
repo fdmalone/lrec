@@ -100,7 +100,6 @@ void random_overlap(vector<double> &overlap) {
     }
     for (int i = 0; i < depth; i++) {
         overlap[i] = 1.0/(double)(noise_its + 1)*av[i];
-        cout << overlap[i] << endl;
     }
     file.close();
 
@@ -222,14 +221,12 @@ void gram_schmidt(mat overlap) {
             }
         }
         norm_i[step] = sqrt(norm_i[step]);
-        cout <<"norm: " <<step<<"  "<<norm_i[step] << endl;
         step++;
 
         for (int j = 0; j < i; j++) {
             for (int k = 0; k < i; k++) {
                 for (int l = 0; l < L; l++) {
                     gram(j,i) -= gram(l,k)*overlap(i,l)*gram(j,k)/norm_i[k+1];
-                    //cout << gram(j,i) << "  " << l << "   " << k << "   " << i << "   " << j << endl;
                 }
             }
         }

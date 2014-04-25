@@ -195,7 +195,6 @@ void non_zero_overlap(mat input, bitint *I, double diff[], double mag[]) {
     for (int i = 0; i < n_states; i++) {
         tmp = I[i] & mask;
         new_conf = I[i] ^ xor_array[init_basis];
-        //cout << look_up_table(new_conf, I) << "  " << i <<"   "<< bitset<8>(I[i]) <<"  "<<spin_coeff[init_basis][tmp] << endl;
         mod_vec[look_up_table(new_conf, I)] += spin_coeff[init_basis][tmp]*curr_vec[i];
     }
 
@@ -205,7 +204,6 @@ void non_zero_overlap(mat input, bitint *I, double diff[], double mag[]) {
     for (int i = 0; i < n_states; i++) {
         v_j = conv_to<cx_vec>::from(input.col(i));
         result = cdot(v_j, mod_vec);
-        //cout << result << endl;
         res_dub = (conj(result)*result).real();
         trans << i << "  " << res[i]*res[i] << endl;
         mag[i] = res_dub;
@@ -254,8 +252,6 @@ void non_zero_all(mat input, bitint *I, vec evec, double mag[]) {
         }
     }
 
-    cout << "non-zero: " << it << endl;
-
     file.close();
 }
 
@@ -289,7 +285,6 @@ void correlation_function_exact(double trans[], double mag[]) {
     ofstream file;
     file.open("correlation_function_exact.dat");
 
-    cout << (int)(max_time/time_step) << endl;
     for (int i = 0; i < (int)(max_time/time_step); i++) {
         corr = 0.0;
         for (int j = 0; j < n_states; j++) {
@@ -361,7 +356,6 @@ void calc_moments_poly() {
         mag.push_back(magn);
     }
 
-    cout << "poly:@ "<< eig.size() << endl;
     ofstream out;
     out.open("calc_moments_poly.dat");
 
@@ -442,7 +436,6 @@ void calc_moments(vector<double> &mom_vec) {
     double a, b, slope1, slope2;
     inp.open("dos.dat");
 
-    if (inp.is_open()) cout << "opened " << "   " << dos_its << endl;
     while (!inp.eof()) {
         inp >> a >> b;
         dos[it][0] = a;
@@ -450,7 +443,6 @@ void calc_moments(vector<double> &mom_vec) {
         it++;
     }
     inp.close();
-    // cout << it << endl;
 
     ofstream out;
 
@@ -464,7 +456,6 @@ void calc_moments(vector<double> &mom_vec) {
     }
     for (int i = 0; i < maxima.size(); i++) {
         mu_0 += maxima[i];
-        cout << "freq: " << freq[i] << endl;
     }
     for (int i = 0; i < maxima.size(); i++) {
         maxima[i] = maxima[i]/mu_0;
@@ -512,14 +503,10 @@ void diag_heis(vector<double> &eigen, bitint *I) {
     eig_sym(e_val, e_vec, H);
     cout <<"Ground state energy: " << e_val(0) << "  " << e_val(1)<< endl;
     gs = e_vec.col(0);
-    //cout << e_vec.col(255) << endl;
-    //cout << e_vec.col(21) << endl;
-    //cout << gs << endl;
     eigen = conv_to< vector<double> >::from(gs);
     evalues = conv_to< vector<double> >::from(e_val);
     transition_freq(evalues, spec_diff);
     non_zero_overlap(e_vec, I, spec_diff, spec_amp);
-    //non_zero_all(e_vec, I, e_val, spec_amp);
     exact_moments(spec_diff, spec_amp, n_moments);
     if (corr_func) {
         correlation_function_exact(spec_diff, spec_amp);

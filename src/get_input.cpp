@@ -144,22 +144,36 @@ void set_up_globals(vector<string> parsed, vector<double> val) {
 
 void print_input() {
 
-    cout << "Peforming recursion method." << endl;
-    cout << "Starting vector: " << init_basis << endl;
-    cout << "Fixed end boundary conditions: " << boolalpha <<fixed_ends << endl;
-    cout << "Number of sites: " << n_sites << endl;
-    cout << "Values of J_x, J_y, J_z: " << J[0] << "   " << J[1] << "   " << J[2] << endl;
-    cout << "Number of states: " << n_states << endl;
-    cout << "Number of iterations: " << noise_its << endl;
-    cout << "Randomisation factor: " << noise_factor << endl;
-    cout << "Recursion depth: " << depth << endl;
-    cout << "Number of moments calculate: " << moments << "   " << n_moments << endl;
-    cout << "Generating spectral function graph: " << dos << endl;
-    cout << "Spectral resolution: " << dos_step << endl;
-    cout << "Spectral width: " << abs(2*omega) << endl;
-    cout << "Correlation function: " << corr_func << "  " << max_time/time_step << "   " << max_time << "  " << time_step << endl;
-    cout << "Polynomials: " << boolalpha << poly_spec << endl;
-    cout << endl;
+    if (recursion) {
+        cout << "Peforming recursion method." << endl;
+        cout << "Starting vector: " << init_basis << endl;
+        cout << "Fixed end boundary conditions: " << boolalpha <<fixed_ends << endl;
+        cout << "Number of sites: " << n_sites << endl;
+        cout << "Lattice size compiled with: " << pow(2.0, sizeof(bit_mask)+1) << endl;
+        if ((int)pow(2.0, sizeof(bit_mask)+1) != n_sites) cout << "CONFLICT IN LATTICE SIZE." << endl;
+        cout << "Values of J_x, J_y, J_z: " << J[0] << "   " << J[1] << "   " << J[2] << endl;
+        cout << "Number of states: " << n_states << endl;
+        cout << "Recursion depth: " << depth << endl;
+        if (random_sim) {
+            cout << "Number of iterations: " << noise_its << endl;
+            cout << "Randomisation factor: " << noise_factor << endl;
+        }
+        if (moments) {
+            cout << "Number of moments to calculate: " << n_moments << endl;
+        }
+        if (dos) {
+            cout << "Generating spectral function graph: " << dos << endl;
+            cout << "Spectral resolution: " << dos_step << endl;
+            cout << "Spectral width: " << abs(2*omega) << endl;
+        }
+        if (corr_func) {
+            cout << "Correlation function: " << corr_func << "  " << max_time/time_step << "   " << max_time << "  " << time_step << endl;
+        }
+        if (poly_spec) {
+            cout << "Polynomials: " << boolalpha << poly_spec << endl;
+        }
+        cout << endl;
+    }
 
 }
 

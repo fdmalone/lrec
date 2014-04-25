@@ -76,12 +76,9 @@ void poly_rec(vector<double> &p_nmi, vector<double> &p_N, int p_depth, vector<do
         // shift array
         assign_array(tmp_array, p_n);
         shift_array(tmp_array);
-        //cout << b_n[i+1] << endl;
         for (int j = 0; j < p_order; j++) {
             p_plus[j] = 1.0/b_n[i+1]*(tmp_array[j] - a_n[i]*p_n[j] - b_n[i]*p_mi[j]);
         }
-        //print_array(p_n);
-        //cout << endl;
         assign_array(p_mi, p_n);
         assign_array(p_n, p_plus);
         if (i == p_depth - 2) {
@@ -89,8 +86,6 @@ void poly_rec(vector<double> &p_nmi, vector<double> &p_N, int p_depth, vector<do
             assign_array(p_N, p_plus);
         }
     }
-
-    //print_array(p_nmi);
 
 }
 
@@ -126,7 +121,6 @@ void poly_dos_ovlp(vector<double> a, vector<double> b, vector<double> overlap) {
 
     // Find P_N and P_{N-1}.
     poly_rec(nminus, deriv, p_order, a, b);
-    //print_array(deriv);
     // Find the roots of P_N, which are the eigenvalues of T.
     gsl_poly_complex_workspace*w = gsl_poly_complex_workspace_alloc(p_order);
     gsl_poly_complex_solve(&deriv[0], p_order, w, &eigv[0]);
@@ -139,7 +133,6 @@ void poly_dos_ovlp(vector<double> a, vector<double> b, vector<double> overlap) {
     // G^_0n(E) = sum_{\alpha} P_0(E_{\alpha}) * (E - E_{\alpha})^{-1} * P_n(E_{\alpha} / norm(E_{\alpha}).
     double ome2;
     for (int i = 0; i < depth; i++) {
-        cout << "overlap: " << overlap[i] << endl;
         poly_rec(empty, p_n, i+1, a, b);
         ome2 = 0.0;
         for (int j = 0; j < depth; j++) {
@@ -147,7 +140,6 @@ void poly_dos_ovlp(vector<double> a, vector<double> b, vector<double> overlap) {
             g[j] += gsl_poly_eval(&p_n[0], p_order, eigv[2*j])*overlap[i];
         }
         tmp[i] = ome2;
-        //cout << "second moment " <<ome2 << endl;
     }
     // Normalise, no point in doing it many times.
     for (int i = 0; i < depth; i++) {
@@ -161,23 +153,6 @@ void poly_dos_ovlp(vector<double> a, vector<double> b, vector<double> overlap) {
     }
 
     file.close();
-    /*
-    ofstream file2;
-    file2.open("g0n_mom.dat");
-    double mu_n;
-    for (int i = 0; i < n_moments; i++) {
-        file2 << i << "  ";
-        for (int j = 0; j < depth; j++) {
-            mu_n = 0;
-            for (int k = 0; k < depth; k++) {
-                mu_n += pow(eigv[2*k], i)*dos_ij[j][k]*overlap[j];
-            }
-            file2 << mu_n << "   ";
-        }
-        file2 << endl;
-    }
-    file2.close();
-    */
 
 }
 
@@ -194,10 +169,8 @@ void poly_dos(vector<double> a, vector<double> b, int p_depth) {
     // need the n+1st coefficient, but can be arbitarily defined.
     b.push_back(1);
 
-    print_array(b);
     // Find P_N and P_{N-1}.
     poly_rec(nminus, deriv, p_order, a, b);
-    //print_array(deriv);
     // Find the roots of P_N, which are the eigenvalues of T.
     gsl_poly_complex_workspace*w = gsl_poly_complex_workspace_alloc(p_order);
     gsl_poly_complex_solve(&deriv[0], p_order, w, &eigv[0]);

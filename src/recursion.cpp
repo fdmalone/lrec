@@ -390,7 +390,7 @@ void commute_wrapper(vector<double> ground_state, bitint *configs, vector<double
         // b_{i+1} = Tr(V_{i+1}, V_{i+1})
         //check = inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i);
         check = gs_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i, configs, ground_state).real();
-        cout <<dep << "   " <<lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep]<< endl;
+        cout << dep << "   " << lanc_a[dep] << "   " << lanc_b[dep]<<"  " << lanc_b[dep]*lanc_b[dep] << endl;
         cf_a[dep] = lanc_a[dep];
         if (check.real() < 0) {
             cout << "imag" << endl;
@@ -489,7 +489,7 @@ void commute_wrapper_inf(vector<double> &cf_a, vector<double> &cf_b) {
         merge_lists(bit_str_i, bit_str_old, coeff_array_i, coeff_array_old, -1.0*lanc_b[dep]);
         // b_{i+1} = Tr(V_{i+1}, V_{i+1})
         check = inf_trace(bit_str_i, bit_str_i, coeff_array_i, coeff_array_i);
-        cout << "recr: " << dep << "   " <<lanc_a[dep] << "   " << lanc_b[dep]<<"  " <<lanc_b[dep]*lanc_b[dep] << endl;
+        cout << dep << "    " << lanc_a[dep] << "    " << lanc_b[dep]<< "    " << lanc_b[dep]*lanc_b[dep] << endl;
         cf_a[dep] = lanc_a[dep];
         if (check.real() < 0) {
             break;
