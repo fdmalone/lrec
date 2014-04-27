@@ -113,7 +113,7 @@ int insertion_rank(bitint array[], bitint rank[], int length) {
         j = i - 1;
         tmp = rank[i];
         do {
-            if ((double)array[rank[j]] - (double)array[tmp] < de) break;
+            if (array[rank[j]] < array[tmp]) break;
             rank[j+1] = rank[j];
             j--;
         } while (j >= 0);
