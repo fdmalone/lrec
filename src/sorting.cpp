@@ -18,7 +18,7 @@ int insertion_sort(int array[], int length) {
 
     int i, j, tmp, counter=0;
 
-    for (i = 1; i<length; i++) {
+    for (i = 1; i < length; i++) {
         j = i;
         while (j > 0 && array[j-1] > array[j]) {
             tmp = array[j];
@@ -92,11 +92,10 @@ int permute_norm(int a, int b, double &sign) {
     }
 }
 
-// Sorting / utils
-// should be void.
 int insertion_rank(bitint array[], bitint rank[], int length) {
 
     // Rank an array in increasing order result is rank which contains indices or ranked array elements.
+    // Source: HANDE.
 
     // In:
     //   array: array of unsigned ints to be sorted i.e. the basis vectors.
@@ -109,21 +108,24 @@ int insertion_rank(bitint array[], bitint rank[], int length) {
     for (i = 0; i < length; i++) {
         rank[i] = i;
     }
+
     for (i = 1; i < length; i++) {
         j = i - 1;
         tmp = rank[i];
         do {
-            if ((int)(array[rank[j]] - array[tmp]) < 0) break;
+            if ((double)array[rank[j]] - (double)array[tmp] < de) break;
             rank[j+1] = rank[j];
             j--;
         } while (j >= 0);
         rank[j+1] = tmp;
     }
 }
+
 int binary_search(vector<bitint> &a, int min, int max, bitint val, int &pos) {
 
     // Search for position in sorted list for elements.
-    // If it's not in the list then we find the best place to put it. Source: HANDE.
+    // If it's not in the list then we find the best place to put it.
+    // Source: HANDE.
 
     // In/Out:
     //    a: array containing our list.
@@ -179,6 +181,7 @@ int binary_search(vector<bitint> &a, int min, int max, bitint val, int &pos) {
         }
     }
 }
+
 int look_up_table(bitint input, bitint arr[]) {
 
     for (int i = 0; i < n_states; i++) {

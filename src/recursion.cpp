@@ -421,6 +421,7 @@ void commute_wrapper(vector<double> ground_state, bitint *configs, vector<double
     file2.close();
     file3.close();
 }
+
 void commute_wrapper_inf(vector<double> &cf_a, vector<double> &cf_b) {
 
     ofstream file1, file2, file3;
