@@ -22,6 +22,19 @@ void insert_element(vector<bitint> &a, int pos, int res, int max, bitint val) {
 
     a.insert(a.begin() + pos, val);
 }
+
+void insert_element_ulong(vector<bitint> &a, int pos, int max, bitint val) {
+
+    int i, k;
+
+    for (i = max; i >= pos; i--) {
+        k = i + 1;
+        a[k] = a[i];
+    }
+    a[pos] = val;
+
+}
+
 // Might need these when moving to different arrays.
 void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val) {
 
@@ -164,8 +177,12 @@ void merge_lists(vector<bitint> &bit_str_new, vector<bitint> bit_str_old, vector
 void add_new_bit_str(bitint bits[], cplxd coeffs[], bitint rank[], int length, vector<bitint> &bit_str_mod, vector<cplxd> &coeff_mod, int &max) {
 
     // If bit string is already present in list add coefficients else need to insert new bit string in appropriate position in list.
+
     int i;
-    int res, pos;
+    int res, pos, min;
+
+    min = 0;
+
     for (i = 0; i < length; i++) {
         // There is probably a way around this.
         // I think there is an issue with sorting of lists of size 0 so need to
@@ -175,7 +192,7 @@ void add_new_bit_str(bitint bits[], cplxd coeffs[], bitint rank[], int length, v
             coeff_mod.push_back(coeffs[rank[i]]);
         }
         else {
-            res = binary_search(bit_str_mod, 0, bit_str_mod.size()-1, bits[rank[i]], pos);
+            res = binary_search(bit_str_mod, min, bit_str_mod.size()-1, bits[rank[i]], pos);
             // Basis element is already in list.
             if (res == 1) {
                 coeff_mod[pos] += coeffs[rank[i]];
@@ -187,6 +204,7 @@ void add_new_bit_str(bitint bits[], cplxd coeffs[], bitint rank[], int length, v
                 coeff_mod.insert(coeff_mod.begin() + pos, coeffs[rank[i]]);
             }
         }
+        min = pos + 1;
         max = max + 1;
     }
 }

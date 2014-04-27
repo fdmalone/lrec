@@ -18,7 +18,7 @@ void add_new_bit_str(bitint bits[], cplxd coeffs[], bitint rank[], int length, v
 void print(vector<bitint> input);
 void print_c(vector<cplxd> input);
 void remove_zeros(vector<bitint> &input, vector<cplxd> &coeffs);
-void insert_element(vector<bitint> &a, int pos, int res, int max, bitint val);
+void insert_element_ulong(vector<bitint> &a, int pos, int max, bitint val);
 void insert_element_cplxd(vector<cplxd> &a, int pos, int res, int max, cplxd val);
 double inf_trace(vector<bitint> bit_str_a, vector<bitint> bit_str_b, vector<cplxd> coeff_a, vector<cplxd> coeff_b);
 void merge_lists(vector<bitint> &bit_str_new, vector<bitint> bit_str_old, vector<cplxd> &coeff_new, vector<cplxd> coeff_old, double mult_a);
