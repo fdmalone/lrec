@@ -187,6 +187,9 @@ int set_up_chain() {
         cout << "Chain length is not a multiple of 8 or exceeds max chain length of 32 sites." << endl;
         return 1;
     }
+    else {
+        return 0;
+    }
 
 }
 

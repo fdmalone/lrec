@@ -448,8 +448,8 @@ void commute_wrapper_inf(vector<double> &cf_a, vector<double> &cf_b) {
 
     // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
     // Hopefully should reduce on reallocation of array, although probably too large at the same time.
-    bit_str_i.reserve(1e5);
-    coeff_array_i.reserve(1e5);
+    bit_str_i.reserve(1e7);
+    coeff_array_i.reserve(1e7);
 
     for (dep = 0; dep < depth; dep++) {
         max = -1;
@@ -482,7 +482,6 @@ void commute_wrapper_inf(vector<double> &cf_a, vector<double> &cf_b) {
             }
         }
         // a_i = Tr(Lu, u)
-        remove_zeros(bit_str_i, coeff_array_i);
         lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
         // Calculate Lu - a_i u.
         merge_lists(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0, -1.0*lanc_a[dep]);
