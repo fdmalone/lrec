@@ -53,15 +53,14 @@ int permute(int a, int b, double &sign) {
 
 int permute_norm(int a, int b, double &sign) {
 
-    // Work out what matrix we commuted with and also the resulting sign.
-    // Technically also reduce nearest neighbour matrices. Not good practice two outputs.
-    // Should reduce.
+    // Reduce product of type \sigma_i^a\sigma_i^b.
+    // \sigma_a \sigma_b = i \varepsilon_{abc} \sigma_c + \delta{ab} I.
 
     // In:
-    //   a: Matrix we input into the commutator.
-    //   b: matrix we get out.
+    //   a: Matrix to left
+    //   b: Matrix to right.
     // In/out:
-    //   sign: The sign of from permutation.
+    //   sign: The sign from permutation.
 
     int epsilon[3], res;
 

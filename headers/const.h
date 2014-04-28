@@ -86,7 +86,7 @@ enum nearest {
 };
 
 // Bit masks.
-const bitint bit_mask = 0XF, on_site_mask = 3, nn_mask = 0XC;
+const bitint bit_mask = 0XF, on_site_mask = 3, nn_mask = 0XC, merge_mask = ~3;
 
 const bitint bit_cycle[2] = {1, 2};
 
