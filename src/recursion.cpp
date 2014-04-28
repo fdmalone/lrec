@@ -465,8 +465,6 @@ void commute_wrapper_inf(vector<double> &cf_a, vector<double> &cf_b) {
     cf_b[0] = lanc_b[0];
     divide_c(coeff_array_0,sqrt(lanc_b[0]));
 
-    clock_t t;
-    float total_t = 0;
     // Max size of space ~ (dep+1)*2Z*N_s ~ (number of matrices)*(2*connectivity)*(number of bit strings at last iteration)
     // Hopefully should reduce on reallocation of array, although probably too large at the same time.
     bit_str_i.reserve(1e7);

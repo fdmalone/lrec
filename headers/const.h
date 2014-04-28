@@ -58,7 +58,6 @@ extern double noise_factor;
 // Number of iterations for random noise calculations, monte carlo steps effectively.
 extern int noise_its;
 
-
 // Calculation options.
 
 // Do recursion..
@@ -77,6 +76,7 @@ extern bool keep_files;
 extern bool poly_spec;
 extern bool convert_moments;
 extern bool ops_file;
+extern std::string dump_file;
 //extern bool time;
 
 // Neighbours.

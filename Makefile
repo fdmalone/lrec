@@ -6,7 +6,7 @@ OBJECTS = $(SOURCES:.cpp=.o)
 EXECUTABLE = bin/out
 GIT_VERSION := $(shell git describe --dirty --always)
 CFLAGS = -c -O3 -DLATTICE=$(LATTICE) -I $(UTIL) -DVERSION=\"$(GIT_VERSION)\"
-LDFLAGS = -O3 -lgsl -lgslcblas -lm -llapack -lblas
+LDFLAGS = -lgsl -lgslcblas -lm -llapack -lblas
 all: $(SOURCES) $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)

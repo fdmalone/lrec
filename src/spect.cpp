@@ -9,7 +9,7 @@
 #include "recursion.h"
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
-
+#include <sstream>
 using namespace std;
 using namespace arma;
 
@@ -49,6 +49,52 @@ double continued_fraction(vector<double> a, vector<double> b) {
     }
 
     return(-2.0*f0.imag());
+
+}
+
+void overlap_from_file(vector<double> &overlap, bitint *configs, vector<double> gs_vec) {
+
+    ifstream input;
+    const char* file_name = dump_file.c_str();
+    input.open(file_name);
+
+    int flips;
+    bitint conf;
+    cplxd val;
+    vector<int> n_flips;
+    vector<bitint> bit_str;
+    vector<cplxd> coeffs;
+
+    string line;
+    getline(input, line);
+    while (input >> conf >> val >> flips) {
+        bit_str.push_back(conf);
+        coeffs.push_back(val);
+        n_flips.push_back(flips);
+    }
+    input.close();
+    // Deal with first line.
+    std::istringstream in(line);
+    string text;
+    in >> text;
+    int num;
+    vector<int> lengths;
+    while (in >> num) lengths.push_back(num);
+
+
+    vector<bitint> tmp_el_b;
+    vector<cplxd> tmp_coeff_b;
+    int shift_a, shift_b;
+
+    shift_a = 0;
+    shift_b = 0;
+
+    for (int j = 0; j < depth; j++) {
+        tmp_el_b.assign(bit_str.begin()+shift_b, bit_str.begin()+lengths[j]+shift_b);
+        tmp_coeff_b.assign(coeffs.begin()+shift_b, coeffs.begin()+lengths[j]+shift_b);
+        overlap[j] = gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec).real();
+        shift_b += lengths[j];
+    }
 
 }
 

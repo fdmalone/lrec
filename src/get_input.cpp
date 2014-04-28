@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vector>
 #include "const.h"
+#include <sstream>
 
 using namespace std;
 

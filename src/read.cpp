@@ -4,13 +4,14 @@
 #include <algorithm>
 #include <stdint.h>
 #include <vector>
-#include <sstream>
 #include <complex>
 #include <fstream>
 #include "const.h"
 #include "sorting.h"
 
 using namespace std;
+
+string dump_file;
 
 void read_output(vector<int> &lengths, vector<bitint> &bas_el_d, vector<cplxd> &bas_coeff_d) {
 
@@ -30,7 +31,7 @@ void read_output(vector<int> &lengths, vector<bitint> &bas_el_d, vector<cplxd> &
     for (int i = 0; i < lengths.size(); i++) {
         num_el += lengths[i];
     }
-    cout << num_el << endl;
+
     for (int i = 0; i < num_el; i++) {
         input_basis >> bas;
         input_coeffs >> coeff;
@@ -131,19 +132,13 @@ void sort_operator_list(vector<int> lengths, vector<bitint> bit_str, vector<int>
     find_num_spin_flips(n_flips, bit_str);
 
     for (int i = 0; i < lengths.size(); i++) {
-        cout << step << endl;
         sort(index.begin()+step, index.begin()+step+lengths[i]+1, CmpBits(n_flips));
         step += lengths[i];
     }
 
 }
 
-void write_operator_file() {
-
-    vector<int> lengths, n_flips, index;
-    vector<bitint> bit_str;
-    vector<cplxd> coeffs;
-    read_output(lengths, bit_str, coeffs);
+void construct_file_name() {
 
     std::stringstream composite;
     string dot = ".";
@@ -161,9 +156,18 @@ void write_operator_file() {
     composite << dot;
     composite << depth;
 
-    string file_string = composite.str();
-    const char* file_name = file_string.c_str();
+    dump_file = composite.str();
 
+}
+
+void write_operator_file() {
+
+    vector<int> lengths, n_flips, index;
+    vector<bitint> bit_str;
+    vector<cplxd> coeffs;
+    read_output(lengths, bit_str, coeffs);
+    construct_file_name();
+    const char* file_name = dump_file.c_str();
     ofstream file;
     file.open(file_name);
 
