@@ -497,17 +497,10 @@ void commute_wrapper_inf(vector<double> &cf_a, vector<double> &cf_b) {
                     }
                     // Rank new bits.
                     insertion_rank(bits_sig, rank, 4);
-                    // Add new bits and coeffecients to list.
-                    //t = clock();
                     add_new_bit_str(bits_sig, coeff_sig, rank, 4, bit_str_i, coeff_array_i, max);
-                    //t = clock() - t;
-                    //total_t += (float)t/CLOCKS_PER_SEC;
                 }
             }
         }
-        //cout << dep << "  "  <<total_t << endl;
-        //total_t = 0;
-        //t = clock();
         // a_i = Tr(Lu, u)
         lanc_a[dep] = inf_trace(bit_str_i, bit_str_0, coeff_array_i, coeff_array_0);
         // Calculate Lu - a_i u.
@@ -522,12 +515,10 @@ void commute_wrapper_inf(vector<double> &cf_a, vector<double> &cf_b) {
             break;
         }
         file1 << bit_str_0.size() << endl;
-        //for (int iter = 0; iter < bit_str_0.size(); iter++) {
-            //file2 << bit_str_0[iter] << endl;
-            //file3 << setprecision(16) << coeff_array_0[iter] << endl;
-        //}
-        //t = clock() - t;
-        //total_t += (float)t/CLOCKS_PER_SEC;
+        for (int iter = 0; iter < bit_str_0.size(); iter++) {
+            file2 << bit_str_0[iter] << endl;
+            file3 << setprecision(16) << coeff_array_0[iter] << endl;
+        }
         if (abs(check.real()) < de || dep + 1 == depth) {
             cout << "terminated"<< "  " << dep <<"  " << depth << endl;
             break;
@@ -543,7 +534,6 @@ void commute_wrapper_inf(vector<double> &cf_a, vector<double> &cf_b) {
         bit_str_i.resize(0);
         coeff_array_i.resize(0);
     }
-    cout << "TOTAL: " << total_t << endl;
     file1.close();
     file2.close();
     file3.close();

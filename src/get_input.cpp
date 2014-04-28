@@ -21,6 +21,7 @@ bool keep_files = false;
 bool random_sim = false;
 bool poly_spec = false;
 bool convert_moments = false;
+bool ops_file = false;
 
 // Global data.
 // Some defaults.
@@ -120,6 +121,7 @@ void set_up_calc(vector<string> parsed) {
     random_sim = calc_present(parsed, "random_sim");
     poly_spec = calc_present(parsed, "poly_spec");
     convert_moments = calc_present(parsed, "convert_moments");
+    ops_file = calc_present(parsed, "ops_file");
 
 }
 
@@ -150,7 +152,8 @@ void set_up_globals(vector<string> parsed, vector<double> val) {
 void print_input() {
 
     if (recursion) {
-        cout << "Peforming recursion method." << endl;
+        cout << endl;
+        cout << "Peforming Liovillian recursion." << endl;
         cout << "Git info: " << g_version << endl;
         cout << "Compiled on: " << __DATE__ << " at " << __TIME__ << endl;
         cout << "Starting vector: " << init_basis << endl;
@@ -166,6 +169,8 @@ void print_input() {
         cout << "Values of J_x, J_y, J_z: " << J[0] << "   " << J[1] << "   " << J[2] << endl;
         cout << "Number of states: " << n_states << endl;
         cout << "Recursion depth: " << depth << endl;
+        if (inf) cout << "Infinite temperature inner product." << endl;
+        if (T0) cout << "T = 0 inner product." << endl;
         if (random_sim) {
             cout << "Number of iterations: " << noise_its << endl;
             cout << "Randomisation factor: " << noise_factor << endl;
@@ -183,6 +188,9 @@ void print_input() {
         }
         if (poly_spec) {
             cout << "Polynomials: " << boolalpha << poly_spec << endl;
+        }
+        if (ops_file) {
+            cout << "Dumping operator file." << endl;
         }
         cout << endl;
     }

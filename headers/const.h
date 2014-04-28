@@ -76,6 +76,7 @@ extern bool random_sim;
 extern bool keep_files;
 extern bool poly_spec;
 extern bool convert_moments;
+extern bool ops_file;
 //extern bool time;
 
 // Neighbours.

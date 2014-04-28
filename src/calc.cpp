@@ -7,6 +7,7 @@
 #include "spect.h"
 #include "get_input.h"
 #include "poly.h"
+#include "read_vec.h"
 
 using namespace std;
 
@@ -69,6 +70,9 @@ void calc_type() {
                 calc_moments_poly();
             }
         }
+    }
+    if (ops_file) {
+        write_operator_file();
     }
 
 }
