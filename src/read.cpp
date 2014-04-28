@@ -73,6 +73,31 @@ void find_overlap_product(vector<bitint> &bit_str, vector<cplxd> &coeffs) {
 
 }
 
+void find_num_spin_flips(vector<int> &n_flips, vector<bitint> bit_str) {
+
+    // Find the number of bit flipping matrices in each basis element.
+
+    // In:
+    //     bit_str: array of basis "elements" or strings of bits.
+    // Out:
+    //     n_flips: array containing number of flipping matrices for each element.
+
+    bitint onsite_bits;
+    int bit_flips;
+
+    for (int i = 0; i < bit_str.size(); i++) {
+        bit_flips = 0;
+        for (int j = 0; j < n_sites; j++) {
+            onsite_bits = (bit_str[i] >> 2*j) & on_site_mask;
+            if (onsite_bits == 1 || onsite_bits == 2) {
+                // Current pauli matrix is either \sigma_x or \sigma_y.
+                bit_flips++;
+            }
+        }
+        n_flips.push_back(bit_flips);
+    }
+
+}
 
 void sort_operator_lists(vector<int> lengths, vector<bitint> bit_str, vector<cplxd> coeffs) {
 
@@ -85,7 +110,7 @@ void sort_operator_lists(vector<int> lengths, vector<bitint> bit_str, vector<cpl
 
 void write_operator_file() {
 
-    vector<int> lengths;
+    vector<int> lengths, n_flips;
     vector<bitint> bit_str;
     vector<cplxd> coeffs;
     read_output(lengths, bit_str, coeffs);
@@ -114,14 +139,15 @@ void write_operator_file() {
 
     file << "Lengths: ";
     for (int i = 0; i < lengths.size(); i++) {
-        file << lengths[i] << "  ";
+        file << lengths[i] << "   ";
     }
     file << endl;
 
     find_overlap_product(bit_str, coeffs);
+    find_num_spin_flips(n_flips, bit_str);
 
     for (int i = 0; i < bit_str.size(); i++) {
-        file << bit_str[i] << "   " << coeffs[i] << endl;
+        file << bit_str[i] << "   " << coeffs[i] << "   " << n_flips[i]<< endl;
     }
     file.close();
 
