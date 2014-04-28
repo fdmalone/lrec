@@ -42,6 +42,12 @@ cplxd initial_coeff;
 int noise_its;
 double noise_factor;
 
+#ifdef VERSION
+    string g_version = VERSION;
+#else
+    string g_version = "Not using git!"
+#endif
+
 void read_input(vector<string> &parsed, vector<double> &val, char *filename) {
 
     ifstream file;
@@ -145,6 +151,8 @@ void print_input() {
 
     if (recursion) {
         cout << "Peforming recursion method." << endl;
+        cout << "Git info: " << g_version << endl;
+        cout << "Compiled on: " << __DATE__ << " at " << __TIME__ << endl;
         cout << "Starting vector: " << init_basis << endl;
         if (fixed_ends) {
             cout << "Using fixed end boundary conditions." << endl;
