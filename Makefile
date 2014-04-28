@@ -4,7 +4,7 @@ UTIL = headers/
 SOURCES = $(wildcard src/*.cpp)
 OBJECTS = $(SOURCES:.cpp=.o)
 EXECUTABLE = bin/out
-GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always)
+GIT_VERSION := $(shell git describe --dirty --always)
 CFLAGS = -c -O3 -DLATTICE=$(LATTICE) -I $(UTIL) -DVERSION=\"$(GIT_VERSION)\"
 LDFLAGS = -O3 -lgsl -lgslcblas -lm -llapack -lblas
 all: $(SOURCES) $(EXECUTABLE)
