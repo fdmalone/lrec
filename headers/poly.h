@@ -11,6 +11,8 @@ void shift_array(vector<double> &input);
 
 void print_array(vector<double> input);
 
+void print_array(vector<bitint> input);
+
 void poly_deriv(vector<double> &poly);
 
 void store_norm(vector<double> &norm, vector<double> p_N, vector<double> p_Nm, vector<double> eig);

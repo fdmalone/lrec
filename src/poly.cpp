@@ -58,6 +58,14 @@ void print_array(vector<double> input) {
     }
 
 }
+void print_array(vector<bitint> input) {
+
+    for (int i = 0; i < input.size(); i++) {
+        cout << i << "  " << input[i] << endl;
+    }
+
+}
+
 
 void poly_rec(vector<double> &p_nmi, vector<double> &p_N, int p_depth, vector<double> a_n, vector<double> b_n) {
 
