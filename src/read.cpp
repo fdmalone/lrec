@@ -67,7 +67,7 @@ void find_overlap_product(vector<bitint> &bit_str, vector<cplxd> &coeffs) {
         bit_str[i] &= ~on_site_mask;
         bit_str[i] |= new_bits;
         // \sigma_a \sigma_b = i \varepsilon_{abc} \sigma_c + \delta{ab} I.
-        if (new_bits != 0) {
+        if (onsite_bits != 0 && new_bits != 0) {
             coeffs[i] *= I_c*sgn;
         }
     }
