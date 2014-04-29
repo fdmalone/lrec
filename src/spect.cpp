@@ -10,6 +10,9 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <sstream>
+#include "sorting.h"
+#include "poly.h"
+
 using namespace std;
 using namespace arma;
 
@@ -81,10 +84,11 @@ void overlap_from_file(vector<double> &overlap, bitint *configs, vector<double> 
     vector<int> lengths;
     while (in >> num) lengths.push_back(num);
 
-
     vector<bitint> tmp_el_b;
     vector<cplxd> tmp_coeff_b;
     int shift_a, shift_b;
+    bitint basis_element, bit, onsite_sigma;
+    cplxd basis_coeff, trace;
 
     shift_a = 0;
     shift_b = 0;
@@ -92,7 +96,32 @@ void overlap_from_file(vector<double> &overlap, bitint *configs, vector<double> 
     for (int j = 0; j < depth; j++) {
         tmp_el_b.assign(bit_str.begin()+shift_b, bit_str.begin()+lengths[j]+shift_b);
         tmp_coeff_b.assign(coeffs.begin()+shift_b, coeffs.begin()+lengths[j]+shift_b);
-        overlap[j] = gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec).real();
+        for (int tmp1 = 0; tmp1 < tmp_el_b.size(); tmp1++) {
+        for (int tmp = 0; tmp < n_sites; tmp++) {
+            onsite_sigma = (tmp_el_b[tmp1] >> 2*tmp) & on_site_mask;
+            //cout << onsite_sigma << endl;
+        }
+        //cout << endl;
+        }
+        trace = 0;
+        for (int iter = 0; iter < n_states; iter++) {
+            for (int k = 0; k < tmp_el_b.size(); k++) {
+                basis_element = configs[iter];
+                basis_coeff = gs_vec[iter];
+                if (abs(basis_coeff) > de) {
+                    for (int l = 0; l < n_sites; l++){
+                        bit = (basis_element >> l) & 1;
+                        onsite_sigma = (tmp_el_b[k] >> 2*l) & on_site_mask;
+                        basis_element ^= (xor_array[onsite_sigma] << l);
+                        basis_coeff *= spin_coeff[onsite_sigma][bit];
+                    }
+                    trace += tmp_coeff_b[k]*basis_coeff*gs_vec[look_up_table(basis_element, configs)];
+                    cout << tmp_coeff_b[k] << "   " << basis_coeff << "  " << gs_vec[look_up_table(basis_element, configs)] << endl;
+                }
+            }
+        }
+        overlap[j] = trace.real();
+        cout << overlap[j] << endl;
         shift_b += lengths[j];
     }
 
@@ -116,6 +145,7 @@ void overlap_matrix(vector<double> &overlap, bitint *configs, vector<double> gs_
         tmp_el_b.assign(bas_el.begin()+shift_b, bas_el.begin()+lengths[j]+shift_b);
         tmp_coeff_b.assign(bas_coeff.begin()+shift_b, bas_coeff.begin()+lengths[j]+shift_b);
         overlap[j] = gs_trace(tmp_el_a, tmp_el_b, tmp_coeff_a, tmp_coeff_b, configs, gs_vec).real();
+        cout << overlap[j] << endl;
         shift_b += lengths[j];
     }
 }
