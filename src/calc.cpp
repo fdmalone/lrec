@@ -23,10 +23,12 @@ void calc_type() {
             diag_heis(ground_state, configs);
             if (find_overlap) {
                 commute_wrapper_inf(cf_a, cf_b);
-                //overlap_matrix(ovlp, configs, ground_state);
                 if (ops_file) {
                     write_operator_file();
                     overlap_from_file(ovlp, configs, ground_state);
+                }
+                else {
+                    overlap_matrix(ovlp, configs, ground_state);
                 }
                 if (random_sim) {
                     random_overlap(ovlp);
