@@ -106,29 +106,7 @@ cplxd gs_trace(vector<bitint> input_a, vector<bitint> input_b, vector<cplxd> coe
     bitint onsite_sigma_a, onsite_sigma_b, onsite_sigma, basis_element;
     cplxd trace = 0;
     double sgn;
-    cplxd flip;
     cplxd reduced_coeff, basis_coeff;
-    // Loop over Pauli matrices in product state.
-    for (int tmp = 0; tmp < input_a.size(); tmp++) {
-        for (int tmp1 = 0; tmp1 < input_b.size(); tmp1++){
-            flip = coeff_b[tmp1];
-            cout << flip << endl;
-            for (int step = 0; step < n_sites; step++) {
-                onsite_sigma_a = (input_a[tmp] >> 2*step) & on_site_mask;
-                onsite_sigma_b = (input_b[tmp1] >> 2*step) & on_site_mask;
-                onsite_sigma = permute_norm(onsite_sigma_a, onsite_sigma_b, sgn);
-                cout << onsite_sigma_a << "   " << onsite_sigma_b << "  " << onsite_sigma  << endl;
-                if (onsite_sigma_a != 0 && onsite_sigma_b != 0 && onsite_sigma != 0) {
-                    flip *= I_c*sgn;
-                }
-                else {
-                    flip *= sgn;
-                    if (sgn < 0) cout << "CHECK:" << endl;
-                }
-            }
-            cout << input_b[tmp1] << "  " <<flip << endl;
-        }
-    }
 
     for (int iter = 0; iter < n_states; iter++) {
     for (i = 0; i < input_a.size(); i++) {

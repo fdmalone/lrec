@@ -96,13 +96,6 @@ void overlap_from_file(vector<double> &overlap, bitint *configs, vector<double> 
     for (int j = 0; j < depth; j++) {
         tmp_el_b.assign(bit_str.begin()+shift_b, bit_str.begin()+lengths[j]+shift_b);
         tmp_coeff_b.assign(coeffs.begin()+shift_b, coeffs.begin()+lengths[j]+shift_b);
-        for (int tmp1 = 0; tmp1 < tmp_el_b.size(); tmp1++) {
-        for (int tmp = 0; tmp < n_sites; tmp++) {
-            onsite_sigma = (tmp_el_b[tmp1] >> 2*tmp) & on_site_mask;
-            //cout << onsite_sigma << endl;
-        }
-        //cout << endl;
-        }
         trace = 0;
         for (int iter = 0; iter < n_states; iter++) {
             for (int k = 0; k < tmp_el_b.size(); k++) {
@@ -116,12 +109,10 @@ void overlap_from_file(vector<double> &overlap, bitint *configs, vector<double> 
                         basis_coeff *= spin_coeff[onsite_sigma][bit];
                     }
                     trace += tmp_coeff_b[k]*basis_coeff*gs_vec[look_up_table(basis_element, configs)];
-                    cout << tmp_coeff_b[k] << "   " << basis_coeff << "  " << gs_vec[look_up_table(basis_element, configs)] << endl;
                 }
             }
         }
         overlap[j] = trace.real();
-        cout << overlap[j] << endl;
         shift_b += lengths[j];
     }
 
