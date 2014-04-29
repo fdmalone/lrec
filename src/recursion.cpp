@@ -120,7 +120,7 @@ cplxd gs_trace(vector<bitint> input_a, vector<bitint> input_b, vector<cplxd> coe
                 // Operate on basis element on site k with Pauli matrix.
                 onsite_sigma_a = (input_a[i] >> 2*k) & on_site_mask;
                 onsite_sigma_b = (input_b[j] >> 2*k) & on_site_mask;
-                onsite_sigma = permute_norm(onsite_sigma_b, onsite_sigma_a, sgn);
+                onsite_sigma = permute_norm(onsite_sigma_a, onsite_sigma_b, sgn);
                 basis_element ^= (xor_array[onsite_sigma] << k);
                 // Work out coefficient = a_i*
                 if (onsite_sigma_a != 0 && onsite_sigma_b != 0 && onsite_sigma != 0) {
@@ -130,7 +130,7 @@ cplxd gs_trace(vector<bitint> input_a, vector<bitint> input_b, vector<cplxd> coe
                     basis_coeff *= sgn*spin_coeff[onsite_sigma][bit];
                 }
             }
-            trace += conj(coeff_b[j])*coeff_a[i]*basis_coeff*gs_coeff[look_up_table(basis_element, ground_state)];
+            trace += coeff_b[j]*coeff_a[i]*basis_coeff*gs_coeff[look_up_table(basis_element, ground_state)];
         }
         }
     }
