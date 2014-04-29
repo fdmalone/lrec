@@ -125,14 +125,10 @@ void sort_operator_list(vector<int> lengths, vector<bitint> bit_str, vector<int>
     //     n_flips: array containing the number of bit flipping matrices.
 
     int step = 0;
-    n_flips.reserve(bit_str.size());
-
-    for (int i = 0; i < bit_str.size(); i++) index.push_back(i);
-
-    find_num_spin_flips(n_flips, bit_str);
 
     for (int i = 0; i < lengths.size(); i++) {
-        sort(index.begin()+step, index.begin()+step+lengths[i]+1, CmpBits(n_flips));
+        //cout << step << "  " << step+lengths[i]+1 << endl;
+        sort(index.begin()+step, index.begin()+step+lengths[i], CmpBits(n_flips));
         step += lengths[i];
     }
 
@@ -165,8 +161,10 @@ void write_operator_file() {
     vector<int> lengths, n_flips, index;
     vector<bitint> bit_str;
     vector<cplxd> coeffs;
+
     read_output(lengths, bit_str, coeffs);
     construct_file_name();
+
     const char* file_name = dump_file.c_str();
     ofstream file;
     file.open(file_name);
@@ -179,11 +177,16 @@ void write_operator_file() {
 
     find_overlap_product(bit_str, coeffs);
 
-    sort_operator_list(lengths, bit_str, index, n_flips);
+    n_flips.reserve(bit_str.size());
+
+    find_num_spin_flips(n_flips, bit_str);
+
+    for (int i = 0; i < bit_str.size(); i++) index.push_back(i);
 
     for (int i = 0; i < bit_str.size(); i++) {
-        file << bit_str[index[i]] << "   " << coeffs[index[i]] << "   " << n_flips[index[i]]<< endl;
+            file << bit_str[index[i]] << "   " << coeffs[index[i]] << "   " << n_flips[index[i]]<< endl;
     }
+
     file.close();
 
 }
