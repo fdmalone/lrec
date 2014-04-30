@@ -169,11 +169,15 @@ void write_operator_file() {
     ofstream file;
     file.open(file_name);
 
-    file << "Lengths: ";
+    file << "&OPS" << endl;
+    file << "N_sites=" << n_sites << "," << endl;
+    file << "Depth=" << depth << "," << endl;
+    file << "Lengths=";
     for (int i = 0; i < lengths.size(); i++) {
-        file << lengths[i] << "   ";
+        file << lengths[i] << ",";
     }
     file << endl;
+    file << "&END" << endl;
 
     find_overlap_product(bit_str, coeffs);
 

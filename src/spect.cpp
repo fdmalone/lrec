@@ -68,16 +68,20 @@ void overlap_from_file(vector<double> &overlap, bitint *configs, vector<double> 
     vector<bitint> bit_str;
     vector<cplxd> coeffs;
 
-    string line;
-    getline(input, line);
+    string len, sites, DEP, start, end;
+    getline(input, start);
+    getline(input, sites);
+    getline(input, DEP);
+    getline(input, len);
+    getline(input, end);
     while (input >> conf >> val >> flips) {
         bit_str.push_back(conf);
         coeffs.push_back(val);
         n_flips.push_back(flips);
     }
     input.close();
-    // Deal with first line.
-    std::istringstream in(line);
+    // Deal with basis lengths.
+    std::istringstream in(len);
     string text;
     in >> text;
     int num;
