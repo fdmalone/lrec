@@ -8,6 +8,7 @@
 #include <fstream>
 #include "const.h"
 #include "sorting.h"
+#include <bitset>
 
 using namespace std;
 
@@ -120,9 +121,9 @@ void sort_operator_list(vector<int> lengths, vector<bitint> bit_str, vector<int>
     // In:
     //     lenghts: number of elements in each basis function.
     //     bit_str: elements of basis functions.
+    //     n_flips: number of bit flipping matrcies present in given bit_str.
     // Out:
     //     index: array containing index corresponding to sorted list.
-    //     n_flips: array containing the number of bit flipping matrices.
 
     int step = 0;
 
@@ -158,6 +159,8 @@ void construct_file_name() {
 
 void write_operator_file() {
 
+    // Write ouput file which can be read by HANDE.
+
     vector<int> lengths, n_flips, index;
     vector<bitint> bit_str;
     vector<cplxd> coeffs;
@@ -169,26 +172,30 @@ void write_operator_file() {
     ofstream file;
     file.open(file_name);
 
+    // Construct namelist.
     file << "&OPS" << endl;
     file << "N_sites=" << n_sites << "," << endl;
     file << "Depth=" << depth << "," << endl;
     file << "Lengths=";
-    for (int i = 0; i < lengths.size(); i++) {
-        file << lengths[i] << ",";
-    }
+    for (int i = 0; i < lengths.size(); i++) file << lengths[i] << ",";
     file << endl;
     file << "&END" << endl;
 
+    // Reduce overlap product into one bit string.
     find_overlap_product(bit_str, coeffs);
 
     n_flips.reserve(bit_str.size());
 
+    // Calculate number of bit flipping matrices in each bit string.
     find_num_spin_flips(n_flips, bit_str);
 
     for (int i = 0; i < bit_str.size(); i++) index.push_back(i);
 
+    // Sort index array using n_flips.
+    sort_operator_list(lengths, bit_str, index, n_flips);
+
     for (int i = 0; i < bit_str.size(); i++) {
-            file << bit_str[index[i]] << "   " << coeffs[index[i]] << "   " << n_flips[index[i]]<< endl;
+            file << bit_str[index[i]] << "   " << setprecision(16) << coeffs[index[i]] << "   " << n_flips[index[i]]<< endl;
     }
 
     file.close();

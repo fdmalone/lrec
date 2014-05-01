@@ -10,6 +10,7 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <sstream>
+#include <string>
 #include "sorting.h"
 #include "poly.h"
 
@@ -62,8 +63,11 @@ void overlap_from_file(vector<double> &overlap, bitint *configs, vector<double> 
     input.open(file_name);
 
     int flips;
+    int num;
+    char eq = '=', delim = ',';
     bitint conf;
     cplxd val;
+    vector<int> lengths;
     vector<int> n_flips;
     vector<bitint> bit_str;
     vector<cplxd> coeffs;
@@ -79,14 +83,20 @@ void overlap_from_file(vector<double> &overlap, bitint *configs, vector<double> 
         coeffs.push_back(val);
         n_flips.push_back(flips);
     }
+
     input.close();
+
     // Deal with basis lengths.
+    // Slightly awkard because of two delimeters.
+    // Taken from Stackoverflow.
     std::istringstream in(len);
     string text;
-    in >> text;
-    int num;
-    vector<int> lengths;
-    while (in >> num) lengths.push_back(num);
+    std::getline(in, text, eq);
+    while (std::getline(in, text, delim)) {
+        std::stringstream convert(text);
+        convert >> num;
+        lengths.push_back(num);
+    }
 
     vector<bitint> tmp_el_b;
     vector<cplxd> tmp_coeff_b;
