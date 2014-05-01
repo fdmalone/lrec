@@ -66,6 +66,9 @@ void calc_type() {
         }
         else {
             commute_wrapper_inf(cf_a, cf_b);
+            if (ops_file) {
+                write_operator_file();
+            }
             if (poly_spec) {
                 poly_dos(cf_a, cf_b, depth);
             }
