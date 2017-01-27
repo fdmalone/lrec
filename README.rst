@@ -13,3 +13,5 @@ length (I know).
 
 There is very little documentation, and parts of the code are a complete mess. I am mostly
 dumping this here in the very slim chance an appendix of my thesis ever gets revisited.
+
+Requires gsl and armadillo.
