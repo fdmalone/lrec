@@ -222,6 +222,7 @@ int set_up_system(char *filename) {
     }
     else {
         print_input();
+        return 0;
     }
 
 }
