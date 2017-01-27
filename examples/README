@@ -1,0 +1,13 @@
+In this example we'll use the code to perform Liovillian recursion to 10 (depth) levels
+starting from the basis vector (sigma_z (here usefully associated with 3(?)) using the
+infinite temperature inner product (inf). We'll also output an operator file (ops_file)
+which contains the basis vectors for each level of recursion (their bit representation)
+and the coefficient appearing in the expansion.
+
+The output from running ./bin/lrec.x lrec.in will yield:
+
+ops_file: contains basis vectors.
+calc_moments_poly.dat: the moments of the spectral function (for this inner product)
+poly_dos.dat: the spectral function for this inner product, where the first column
+              contains the energy of the associated pole and the second column
+              contains the associated weight.

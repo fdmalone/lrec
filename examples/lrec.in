@@ -1,0 +1,14 @@
+recursion
+inf
+moments
+poly_spec
+ops_file
+n_sites 16
+Jx 1
+Jy 1
+Jz 1
+n_moments 10
+eta_g 0.001
+depth 10
+init_basis 3
+initial_coeff 1
