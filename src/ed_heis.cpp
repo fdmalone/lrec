@@ -288,8 +288,8 @@ void correlation_function_exact(double trans[], double mag[]) {
     for (int i = 0; i < (int)(max_time/time_step); i++) {
         corr = 0.0;
         for (int j = 0; j < n_states; j++) {
-            corr.real() += mag[j]*cos(trans[j]*t);
-            corr.imag() += mag[j]*sin(trans[j]*t);
+            //corr.real() += mag[j]*cos(trans[j]*t);
+            //corr.imag() += mag[j]*sin(trans[j]*t);
         }
         file << t << "  " << corr.real() << "   " << corr.imag() << endl;
         t += time_step;
@@ -310,8 +310,8 @@ void correlation_function_calc(vector<double> trans, vector<double> mag) {
     for (int i = 0; i < (int)(max_time/time_step); i++) {
         corr = 0.0;
         for (int j = 0; j < mag.size(); j++) {
-            corr.real() += mag[j]*cos(trans[j]*t);
-            corr.imag() += mag[j]*sin(trans[j]*t);
+            //corr.real() += mag[j]*cos(trans[j]*t);
+            //corr.imag() += mag[j]*sin(trans[j]*t);
         }
         file << t << "  " << corr.real() << "   " << corr.imag() << endl;
         t += time_step;
@@ -449,7 +449,7 @@ void calc_moments(vector<double> &mom_vec) {
     for (int i = 1; i < dos_its; i++) {
         slope1 = dos[i][1] - dos[i-1][1];
         slope2 = dos[i+1][1] - dos[i][1];
-        if (slope1 > 0 && slope2 < 0  || (slope1 < 0 && slope2 > 0 )) {
+        if ((slope1 > 0 && slope2 < 0)  || (slope1 < 0 && slope2 > 0 )) {
             maxima.push_back(dos[i][1]);
             freq.push_back(dos[i][0]);
         }
